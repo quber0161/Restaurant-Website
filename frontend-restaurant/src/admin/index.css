@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Roboto:ital@1&display=swap');
+
+.admin-container *{
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: Outfit;
+}
+
+.admin-container{
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+.admin-container a{
+  text-decoration: none;
+  color: inherit;
+}
+
+.admin-container hr{
+  border: none;
+  height: 1px;
+  background-color: #a9a9a9;
+}
+
+.admin-container .app-content{
+  display: flex;
+}
+
+.admin-container .flex-col{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-container .cursor{
+  cursor: pointer;
+}
