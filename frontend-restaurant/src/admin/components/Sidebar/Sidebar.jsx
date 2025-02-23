@@ -24,6 +24,10 @@ const Sidebar = () => {
           <img src={assets.add_icon} alt="" />
           <p>Manage Categories</p>
         </NavLink>
+        <NavLink to="/admin/extras" className="sidebar-option">
+          <img src={assets.add_icon} alt="" />
+          <p>Extra Ingredients</p>
+        </NavLink>
       </div>
     </div>
   );

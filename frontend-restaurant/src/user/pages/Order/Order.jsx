@@ -30,31 +30,45 @@ const Order = () => {
   const order = async (event) => {
     event.preventDefault();
     let orderItems = [];
-    food_list.map((item)=>{
-      if (cartItems[item._id]>0) {
-        let itemInfo = item;
-        itemInfo["quantity"] = cartItems[item._id]
-        orderItems.push(itemInfo)
-      }
-    })
+
+    food_list.forEach((item) => {
+        if (cartItems[item._id]?.quantity > 0) {
+            orderItems.push({
+                name: item.name,
+                price: item.price,
+                quantity: cartItems[item._id].quantity,
+                extras: cartItems[item._id].extras || [],  // 🟢 Send selected extras
+                comment: cartItems[item._id].comment || "" // 🟢 Send special instructions
+            });
+        }
+    });
 
     // 🟢 Define currentDate as the current timestamp
-    const currentDate = new Date().toISOString(); // Get the current date-time as ISO string
+    const currentDate = new Date().toISOString();
+
     let orderData = {
-      address:data,
-      items:orderItems,
-      amount:getTotalCartAmount(),
-      date: currentDate,
+        address: data,
+        items: orderItems,
+        amount: getTotalCartAmount(),
+        date: currentDate,
+    };
+
+    try {
+        let response = await axios.post(url + "/api/order/place", orderData, { headers: { token } });
+        console.log("Order Response:", response.data); // 🟢 Debug API response
+
+        if (response.data.success) {
+            const { session_url } = response.data;
+            window.location.replace(session_url);
+        } else {
+            alert("Order Error: " + response.data.message); // 🟢 Show actual error message
+        }
+    } catch (error) {
+        console.error("Order API Error:", error); // 🟢 Log full error details
+        alert("Failed to place order. Please check the console for details.");
     }
-    let response = await axios.post(url+"/api/order/place",orderData,{headers:{token}})
-    if (response.data.success) {
-      const {session_url} = response.data;
-      window.location.replace(session_url);
-    }
-    else{
-      alert("Error");
-    }
-  }
+};
+
 
   const navigate = useNavigate();
 
@@ -91,16 +105,6 @@ const Order = () => {
       <div className="cart-total">
           <h2>Cart Total</h2>
           <div>
-            {/* <div className="cart-total-details">
-              <p>Subtotal</p>
-              <p>${getTotalCartAmount()}</p>
-            </div>
-            <hr />
-            <div className="cart-total-details">
-              <p>Delivery Fee</p>
-              <p>${getTotalCartAmount()===0?0:2}</p>
-            </div>
-            <hr /> */}
             <div className="cart-total-details">
               <b>Total</b>
               <b>${getTotalCartAmount()===0?0:getTotalCartAmount()}</b>

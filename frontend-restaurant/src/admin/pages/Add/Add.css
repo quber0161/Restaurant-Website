@@ -41,3 +41,32 @@
     color: white;
     cursor: pointer;
 }
+
+/* 🟢 Extra Ingredients Section */
+.add-extras {
+    margin-top: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.extras-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.extra-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.extra-item input {
+    transform: scale(1.2);
+}

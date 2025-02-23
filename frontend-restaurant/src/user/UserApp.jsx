@@ -9,6 +9,7 @@ import Footer from "./components/Footer/Footer";
 import Login from "./components/Login/Login";
 import Verify from "./pages/Verify/Verify";
 import MyOrders from "./pages/MyOrders/MyOrders";
+import MenuPage from "./pages/MenuPAge/MenuPage";
 
 function UserApp() {
   const [showLogin, setShowLogin] = useState(false);
@@ -20,6 +21,7 @@ function UserApp() {
         <Navbar setShowLogin={setShowLogin} />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/menu" element={<MenuPage />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/order" element={<Order />} />
           <Route path="/verify" element={<Verify />} />

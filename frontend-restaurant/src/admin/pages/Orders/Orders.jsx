@@ -10,9 +10,9 @@ import { assets } from "../../assets/assets";
 const Orders = ({ url }) => {
   const [orders, setOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 1; // 🔹 Change this to set items per page
+  const ordersPerPage = 3;
 
-  // 🟢 Fetch orders from backend
+  // Fetch orders from backend
   const fetchAllOrders = async () => {
     try {
       const response = await axios.get(url + "/api/order/list");
@@ -29,14 +29,11 @@ const Orders = ({ url }) => {
 
   useEffect(() => {
     fetchAllOrders();
-    const interval = setInterval(()=>{
-      fetchAllOrders();
-    }, 10000)
-
-    return() => clearInterval(interval);
+    const interval = setInterval(fetchAllOrders, 10000);
+    return () => clearInterval(interval);
   }, []);
 
-  // 🟢 Change order status
+  // Change order status
   const statusHandler = async (event, orderId) => {
     const response = await axios.post(url + "/api/order/status", {
       orderId,
@@ -47,7 +44,7 @@ const Orders = ({ url }) => {
     }
   };
 
-  // 🟢 Group orders by date
+  // Group orders by date
   const groupOrdersByDate = () => {
     const groupedOrders = {};
 
@@ -64,125 +61,106 @@ const Orders = ({ url }) => {
       groupedOrders[orderDate].push(order);
     });
 
-    // 🟢 Sort orders within each date from recent to old
+    // Sort orders within each date from recent to old
     Object.keys(groupedOrders).forEach((date) => {
-      groupedOrders[date].sort((a, b) => new Date(b.date) - new Date(a.date)); // 🔹 Sort in descending order (recent first)
+      groupedOrders[date].sort((a, b) => new Date(b.date) - new Date(a.date));
     });
 
     return Object.entries(groupedOrders).sort(
       (a, b) => new Date(b[0]) - new Date(a[0])
-    ); // 🔹 Sort dates in ascending order
+    );
   };
 
-  // 🟢 Flatten the grouped orders for pagination
-  const flattenedOrders = groupOrdersByDate().flatMap(([date, ordersOnDate]) => ({
-    date,
-    ordersOnDate,
-  }));
+  // Flatten grouped orders for pagination
+  const flattenGroupedOrders = () => {
+    const groupedOrders = groupOrdersByDate();
+    let allOrders = [];
 
-  // 🟢 Get paginated orders from the flattened list
-  const paginatedOrders = flattenedOrders.slice(
+    groupedOrders.forEach(([date, orders]) => {
+      allOrders.push({ isDateHeader: true, date });
+      allOrders.push(...orders);
+    });
+
+    return allOrders;
+  };
+
+  const allOrders = flattenGroupedOrders();
+
+  // Get paginated orders
+  const paginatedOrders = allOrders.slice(
     (currentPage - 1) * ordersPerPage,
     currentPage * ordersPerPage
   );
 
-  // 🟢 Change border color based on order status
-  const getStatusBorderColor = (status) => {
-    switch (status) {
-      case "Order Processing":
-        return "red"; // Processing - Red
-      case "Ready to Takeaway":
-        return "orange"; // Ready - Orange
-      case "Taken":
-        return "green"; // Taken - Green
-      default:
-        return "gray"; // Default - Gray
-    }
-  };
-
+  // Change background color based on order status
   const getStatusBackgroundColor = (status) => {
     switch (status) {
       case "Order Processing":
-        return "#f8d7da"; // 🔴 Light Red
+        return "#f8d7da";
       case "Ready to Takeaway":
-        return "#fff3cd"; // 🟡 Light Yellow
+        return "#fff3cd";
       case "Taken":
-        return "#d4edda"; // 🟢 Light Green
+        return "#d4edda";
       default:
-        return "#f8f9fa"; // Light Gray (for unknown statuses)
+        return "#f8f9fa";
     }
   };
 
   return (
     <div className="order add">
-      {/* 🟢 Order List */}
+      <h2>All Orders</h2>
       <div className="order-list">
-        {paginatedOrders.map(({ date, ordersOnDate }) => (
-          <div key={date}>
-            <h4 className="order-date">{date}</h4> {/* Date Header */}
-            {ordersOnDate.map((order) => (
-              <div
-                key={order._id}
-                className="order-item"
-                style={{
-                  borderColor: getStatusBorderColor(order.status),
-                  backgroundColor: getStatusBackgroundColor(order.status),
-                }}
-              >
-                <img src={assets.parcel_icon} alt="Parcel" />
-                <div>
-                  <p className="order-item-food">
-                    {order.items.map(
-                      (item, index) =>
-                        `${item.name} x ${item.quantity}${
-                          index < order.items.length - 1 ? ", " : ""
-                        }`
+        {paginatedOrders.map((order, index) =>
+          order.isDateHeader ? (
+            <h4 key={index} className="order-date">{order.date}</h4>
+          ) : (
+            <div
+              key={index}
+              className="order-item"
+              style={{ backgroundColor: getStatusBackgroundColor(order.status) }}
+            >
+              <img src={assets.parcel_icon} alt="Parcel" />
+              
+              <div className="order-details">
+                <p><b>Customer:</b> {order.address.firstName} {order.address.lastName}</p>
+                <p><b>Address:</b> {order.address.houseNo}, {order.address.street}, {order.address.zipCode}</p>
+                <p><b>Phone:</b> {order.address.phone}</p>
+                <p><b>Total Items:</b> {order.items.length}</p>
+                <p><b>Total Amount:</b> ${order.amount}.00</p>
+
+                {/* 🟢 Show Order Items */}
+                {order.items.map((item, idx) => (
+                  <div key={idx} className="order-item-detail">
+                    <p><b>{item.name} x {item.quantity}</b></p>
+                    {item.extras.length > 0 && (
+                      <p className="order-extras"><b>Extras:</b> {item.extras.map(extra => extra.name).join(", ")}</p>
                     )}
-                  </p>
-                  <p className="order-item-name">
-                    {order.address.firstName} {order.address.lastName}
-                  </p>
-                  <div className="order-item-address">
-                    <p>
-                      {order.address.houseNo}, {order.address.street}
-                    </p>
-                    <p>{order.address.zipCode}</p>
+                    {item.comment && (
+                      <p className="order-comment"><b>Note:</b> {item.comment}</p>
+                    )}
                   </div>
-                  <p className="order-item-phone">{order.address.phone}</p>
-                </div>
-                <p>Items: {order.items.length}</p>
-                <p>${order.amount}</p>
-                <select
-                  onChange={(event) => statusHandler(event, order._id)}
-                  value={order.status}
-                >
-                  <option value="Order Processing">Order Processing</option>
-                  <option value="Ready to Takeaway">Ready to Takeaway</option>
-                  <option value="Taken">Taken</option>
-                </select>
+                ))}
               </div>
-            ))}
-          </div>
-        ))}
+
+              <select onChange={(event) => statusHandler(event, order._id)} value={order.status}>
+                <option value="Order Processing">Order Processing</option>
+                <option value="Ready to Takeaway">Ready to Takeaway</option>
+                <option value="Taken">Taken</option>
+              </select>
+            </div>
+          )
+        )}
       </div>
 
-      {/* 🟢 Pagination Below */}
-      <div className="pagination-container">
-        <div className="pagination">
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(currentPage - 1)}
-          >
-            Previous
-          </button>
-          <span>Page {currentPage}</span>
-          <button
-            disabled={currentPage * ordersPerPage >= flattenedOrders.length}
-            onClick={() => setCurrentPage(currentPage + 1)}
-          >
-            Next
-          </button>
-        </div>
+      {/* Pagination */}
+      <div className="pagination">
+        <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+          Previous
+        </button>
+        <span>Page {currentPage}</span>
+        <button disabled={currentPage * ordersPerPage >= allOrders.length} onClick={() => setCurrentPage(currentPage + 1)}>
+          Next
+        </button>
       </div>
     </div>
   );

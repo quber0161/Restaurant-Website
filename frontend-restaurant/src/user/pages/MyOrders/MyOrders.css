@@ -38,6 +38,24 @@
     cursor: pointer;
 }
 
+/* 🟢 Style for Order Extra Ingredients */
+.order-extras {
+    color: #333;
+    font-size: 14px;
+    margin-left: 20px;
+    margin-bottom: 5px;
+}
+
+/* 🟢 Style for Order Special Instructions */
+.order-comment {
+    color: #ff4d4d;
+    font-size: 14px;
+    font-style: italic;
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+
 @media (max-width:900px) {
     .my-orders-order{
         grid-template-columns: 1fr 2fr 1fr;

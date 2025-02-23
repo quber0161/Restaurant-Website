@@ -10,9 +10,9 @@ const MyOrders = () => {
   const { url, token } = useContext(StoreContext);
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 1; // 🟢 Number of orders per page
+  const ordersPerPage = 3; // Number of orders per page
 
-  // 🟢 Fetch User Orders
+  // Fetch User Orders
   const fetchOrders = async () => {
     const response = await axios.post(
       url + "/api/order/userorders",
@@ -20,8 +20,9 @@ const MyOrders = () => {
       { headers: { token } }
     );
     if (response.data.success) {
-      // 🟢 Filter only paid orders
-      const paidOrders = response.data.data.filter(order => order.payment === true);
+      const paidOrders = response.data.data.filter(
+        (order) => order.payment === true
+      );
       setData(paidOrders);
     }
   };
@@ -32,13 +33,12 @@ const MyOrders = () => {
     }
   }, [token]);
 
-  // 🟢 Group orders by date and sort them
+  // Group orders by date and sort them
   const groupOrdersByDate = () => {
     const groupedOrders = {};
 
     data.forEach((order) => {
       if (!order.date) return;
-
       const orderDate = new Date(order.date).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
@@ -51,21 +51,37 @@ const MyOrders = () => {
       groupedOrders[orderDate].push(order);
     });
 
-    // Sort orders by date (ascending) and orders within each date (recent first)
     Object.keys(groupedOrders).forEach((date) => {
       groupedOrders[date].sort((a, b) => new Date(b.date) - new Date(a.date));
     });
 
-    return Object.entries(groupedOrders).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+    return Object.entries(groupedOrders).sort(
+      (a, b) => new Date(b[0]) - new Date(a[0])
+    );
   };
 
-  // 🟢 Get paginated orders
-  const paginatedOrders = groupOrdersByDate().slice(
+  // Flatten grouped orders into a single array for pagination
+  const flattenGroupedOrders = () => {
+    const groupedOrders = groupOrdersByDate();
+    let allOrders = [];
+
+    groupedOrders.forEach(([date, orders]) => {
+      allOrders.push({ isDateHeader: true, date });
+      allOrders.push(...orders);
+    });
+
+    return allOrders;
+  };
+
+  const allOrders = flattenGroupedOrders();
+
+  // Get paginated orders
+  const paginatedOrders = allOrders.slice(
     (currentPage - 1) * ordersPerPage,
     currentPage * ordersPerPage
   );
 
-  // 🟢 Change background color based on order status
+  // Change background color based on order status
   const getStatusBackgroundColor = (status) => {
     switch (status) {
       case "Order Processing":
@@ -83,40 +99,79 @@ const MyOrders = () => {
     <div className="my-orders">
       <h2>My Orders</h2>
       <div className="container">
-        {paginatedOrders.map(([date, ordersOnDate]) => (
-          <div key={date}>
-            <h4 className="order-date">{date}</h4>
-            {ordersOnDate.map((order, index) => (
-              <div
-                key={index}
-                className="my-orders-order"
-                style={{ backgroundColor: getStatusBackgroundColor(order.status) }}
-              >
-                <img src={assets.parcel_icon} alt="" />
-                <p>
-                  {order.items.map((item, idx) =>
-                    `${item.name} x ${item.quantity}${idx < order.items.length - 1 ? ", " : ""}`
-                  )}
-                </p>
-                <p>${order.amount}.00</p>
-                <p>Items: {order.items.length}</p>
-                <p>
-                  <span>&#x25cf;</span> <b>{order.status}</b>
-                </p>
-                <button onClick={fetchOrders}>Track Order</button>
+        {paginatedOrders.map((order, index) =>
+          order.isDateHeader ? (
+            <h4 key={index} className="order-date">
+              {order.date}
+            </h4>
+          ) : (
+            <div
+              key={index}
+              className="my-orders-order"
+              style={{
+                backgroundColor: getStatusBackgroundColor(order.status),
+              }}
+            >
+              <img src={assets.parcel_icon} alt="" />
+
+              {/* Order Items Display */}
+              <div className="order-details">
+                {order.items.map((item, idx) => (
+                  <div key={idx} className="order-item">
+                    <p>
+                      <b>{item.name}</b> x {item.quantity}
+                    </p>
+
+                    {/* 🟢 Extract extras properly */}
+                    {item.extras && item.extras.length > 0 ? (
+                      <p className="order-extras">
+                        <b>Extras:</b>{" "}
+                        {item.extras.map((extra) => extra.name).join(", ")}
+                      </p>
+                    ) : (
+                      <p className="order-extras">
+                        <b>Extras:</b> None
+                      </p>
+                    )}
+
+                    {/* Display Special Instructions if available */}
+                    {item.comment && (
+                      <p className="order-comment">
+                        <b>Note:</b> {item.comment}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ))}
+
+              <p>
+                <b>Total:</b> ${order.amount}.00
+              </p>
+              <p>
+                <b>Items:</b> {order.items.length}
+              </p>
+              <p>
+                <span>&#x25cf;</span> <b>{order.status}</b>
+              </p>
+              <button onClick={fetchOrders}>Track Order</button>
+            </div>
+          )
+        )}
       </div>
 
-      {/* 🟢 Pagination */}
+      {/* Pagination */}
       <div className="pagination">
-        <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(currentPage - 1)}
+        >
           Previous
         </button>
         <span>Page {currentPage}</span>
-        <button disabled={currentPage * ordersPerPage >= data.length} onClick={() => setCurrentPage(currentPage + 1)}>
+        <button
+          disabled={currentPage * ordersPerPage >= allOrders.length}
+          onClick={() => setCurrentPage(currentPage + 1)}
+        >
           Next
         </button>
       </div>

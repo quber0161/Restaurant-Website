@@ -9,6 +9,7 @@ import Orders from "./pages/Orders/Orders";
 import Categories from "./pages/Categories/Categories";
 import { ToastContainer } from "react-toastify";
 import { StoreContext } from "../user/context/StoreContext";
+import Extras from "./pages/Extras/Extras";
 
 const AdminApp = () => {
   const url = "http://localhost:4000";
@@ -33,6 +34,7 @@ const AdminApp = () => {
           <Route path="/list" element={<List url={url} />} />
           <Route path="/orders" element={<Orders url={url} />} />
           <Route path="/categories" element={<Categories url={url} />} />
+          <Route path="/extras" element={<Extras url={url} />}/>
         </Routes>
       </div>
     </div>

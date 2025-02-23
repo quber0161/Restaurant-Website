@@ -14,9 +14,12 @@ const Add = () => {
     description: "",
     price: "",
     category: "",
+    extras: [], // 🟢 Store selected extra ingredients
   });
 
   const [categories, setCategories] = useState([]);
+  const [extraIngredients, setExtraIngredients] = useState([]); // 🟢 Store all available extras
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -24,20 +27,42 @@ const Add = () => {
         if (response.data.success && Array.isArray(response.data.categories)) {
           setCategories(response.data.categories);
         } else {
-          setCategories([]); // ✅ Ensure it's an empty array if data is invalid
+          setCategories([]);
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
-        setCategories([]); // ✅ Ensure fallback to prevent crashes
+        setCategories([]);
       }
     };
+
+    const fetchExtras = async () => {
+      try {
+        const response = await axios.get(`${url()}/api/extras/list`);
+        if (response.data.success) {
+          setExtraIngredients(response.data.extras);
+        }
+      } catch (error) {
+        console.error("Error fetching extras:", error);
+      }
+    };
+
     fetchCategories();
+    fetchExtras();
   }, []);
 
   const onChangeHandler = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
-    setData((data) => ({ ...data, [name]: value }));
+    const { name, value } = event.target;
+    setData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
+  const onExtraChange = (event) => {
+    const { value, checked } = event.target;
+    setData((prevData) => {
+      const newExtras = checked
+        ? [...prevData.extras, value]
+        : prevData.extras.filter((extra) => extra !== value);
+      return { ...prevData, extras: newExtras };
+    });
   };
 
   const onSubmitHandler = async (event) => {
@@ -48,18 +73,26 @@ const Add = () => {
     formData.append("price", Number(data.price));
     formData.append("category", data.category);
     formData.append("image", image);
-    const response = await axios.post(`${url()}/api/food/add`, formData);
-    if (response.data.success) {
-      setData({
-        name: "",
-        description: "",
-        price: "",
-        category: "Salad",
-      });
-      setImage(false);
-      toast.success(response.data.message);
-    } else {
-      toast.error(response.data.message);
+    formData.append("extras", JSON.stringify(data.extras)); // 🟢 Convert extras to JSON string
+
+    try {
+      const response = await axios.post(`${url()}/api/food/add`, formData);
+      if (response.data.success) {
+        setData({
+          name: "",
+          description: "",
+          price: "",
+          category: "",
+          extras: [],
+        });
+        setImage(false);
+        toast.success(response.data.message);
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      console.error("Error adding food item:", error);
+      toast.error("Failed to add food item.");
     }
   };
 
@@ -82,6 +115,7 @@ const Add = () => {
             required
           />
         </div>
+
         <div className="add-product-name flex-col">
           <p>Product Name</p>
           <input
@@ -92,6 +126,7 @@ const Add = () => {
             placeholder="Type here"
           />
         </div>
+
         <div className="add-product-description flex-col">
           <p>Product Description</p>
           <textarea
@@ -103,6 +138,7 @@ const Add = () => {
             required
           ></textarea>
         </div>
+
         <div className="add-category-price">
           <div className="add-category flex-col">
             <p>Product Category</p>
@@ -118,6 +154,7 @@ const Add = () => {
               ))}
             </select>
           </div>
+
           <div className="add-price flex-col">
             <p>Product Price</p>
             <input
@@ -129,6 +166,25 @@ const Add = () => {
             />
           </div>
         </div>
+
+        {/* 🟢 Extra Ingredients Selection */}
+        <div className="add-extras flex-col">
+          <p>Select Extra Ingredients</p>
+          <div className="extras-list">
+            {extraIngredients.map((extra) => (
+              <label key={extra._id} className="extra-option">
+                <input
+                  type="checkbox"
+                  value={extra.name}
+                  onChange={onExtraChange}
+                  checked={data.extras.includes(extra.name)}
+                />
+                {extra.name} - ${extra.price}
+              </label>
+            ))}
+          </div>
+        </div>
+
         <button type="submit" className="add-button">
           ADD
         </button>

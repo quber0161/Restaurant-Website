@@ -8,6 +8,7 @@ import 'dotenv/config'
 import cartRouter from "./routes/CartRoute.js"
 import orderRouter from "./routes/orderRoute.js"
 import categoryRouter from "./routes/categoryRoute.js"
+import extraRouter from "./routes/extraRoute.js"
 
 // app config
 const app = express()
@@ -20,7 +21,7 @@ app.use(cors())
 //db connection
 connectDB();
 
-// api endpoint
+// api endpoint 
 app.use("/api/food", foodRouter)
 app.use("/foodimages", express.static('uploads/foods'))
 app.use("/api/user", userRouter)
@@ -28,6 +29,7 @@ app.use("/api/cart",cartRouter)
 app.use("/api/order",orderRouter)
 app.use("/api/category", categoryRouter)
 app.use("/categoryimages", express.static('uploads/categories'))
+app.use("/api/extras", extraRouter); // 🟢 Register Extra Ingredients API
 
 app.get("/", (req, res) => {
     res.send("API Working")
