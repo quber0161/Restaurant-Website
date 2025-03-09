@@ -55,7 +55,7 @@ const List = () => {
               <p>{item.name}</p>
               <p>{item.category}</p>
               <p>{item.price}</p>
-              <p onClick={()=>removeFood(item._id)} className='cursor'>X</p>
+              <button onClick={()=>removeFood(item._id)} className='li-button'>Remove</button>
             </div>
           )
         })}
