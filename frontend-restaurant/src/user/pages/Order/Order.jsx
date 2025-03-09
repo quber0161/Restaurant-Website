@@ -33,6 +33,10 @@ const Order = () => {
 
     food_list.forEach((item) => {
         if (cartItems[item._id]?.quantity > 0) {
+            let extrasTotal = cartItems[item._id].extras
+              ? cartItems[item._id].extras.reduce((acc, extra) => acc + (extra.price * extra.quantity), 0)
+              : 0;
+
             orderItems.push({
                 name: item.name,
                 price: item.price,
@@ -43,31 +47,31 @@ const Order = () => {
         }
     });
 
-    // 🟢 Define currentDate as the current timestamp
     const currentDate = new Date().toISOString();
-
     let orderData = {
+        userId: localStorage.getItem("userId"),
         address: data,
         items: orderItems,
-        amount: getTotalCartAmount(),
+        amount: getTotalCartAmount(), // ✅ Includes extras pricing
         date: currentDate,
     };
 
     try {
         let response = await axios.post(url + "/api/order/place", orderData, { headers: { token } });
-        console.log("Order Response:", response.data); // 🟢 Debug API response
+        console.log("Order Response:", response.data);
 
         if (response.data.success) {
             const { session_url } = response.data;
             window.location.replace(session_url);
         } else {
-            alert("Order Error: " + response.data.message); // 🟢 Show actual error message
+            alert("Order Error: " + response.data.message);
         }
     } catch (error) {
-        console.error("Order API Error:", error); // 🟢 Log full error details
+        console.error("Order API Error:", error);
         alert("Failed to place order. Please check the console for details.");
     }
 };
+
 
 
   const navigate = useNavigate();

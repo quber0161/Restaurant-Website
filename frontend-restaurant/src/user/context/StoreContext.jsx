@@ -31,8 +31,7 @@ const StoreContextProvider = (props) => {
             }
         }));
     }
-  
-    // If token exists, send the data to the backend
+    
     if (token) {
       try {
         await axios.post(url + "/api/cart/add", { itemId, extras, comment }, { headers: { token } });
@@ -41,8 +40,7 @@ const StoreContextProvider = (props) => {
       }
     }
   };
-  
-  
+    
   
 
   // Updated removeFromCart to work with the new structure
@@ -74,23 +72,54 @@ const StoreContextProvider = (props) => {
   };
 
   // Calculate total cart amount, including extras (assuming $2 per extra)
-  const getTotalCartAmount = () => {
-    let totalAmount = 0;
-    for (const itemId in cartItems) {
-      const cartItem = cartItems[itemId];
-      let foodItem = food_list.find((product) => product._id === itemId);
-      if (foodItem) {
-        const extrasCost = (cartItem.extras?.length || 0) * 2; // Each extra costs $2
-        totalAmount += (foodItem.price + extrasCost) * cartItem.quantity;
-      }
+  const [totalCartAmount, setTotalCartAmount] = useState(0);
+
+const calculateTotalAmount = () => {
+  let total = 0;
+  for (const itemId in cartItems) {
+    const cartItem = cartItems[itemId];
+    let foodItem = food_list.find((product) => product._id === itemId);
+
+    if (foodItem) {
+      // 🟢 Calculate total extras price dynamically
+      const extrasCost = cartItem.extras.reduce((sum, extra) => {
+        const extraDetails = food_list.flatMap(f => f.extras || []).find(e => e._id === extra._id);
+        return sum + (extraDetails ? extraDetails.price * extra.quantity : 0);
+      }, 0);
+
+      total += (foodItem.price + extrasCost) * cartItem.quantity;
     }
-    return totalAmount;
-  };
+  }
+  setTotalCartAmount(total);
+};
+
+// 🟢 Recalculate total whenever cartItems change
+useEffect(() => {
+  calculateTotalAmount();
+}, [cartItems, food_list]);
+
+// 🟢 Function to get total cart amount
+const getTotalCartAmount = () => {
+  return totalCartAmount;
+};
+
+
+
+
 
   const loadCartData = async (token) => {
-    const response = await axios.post(url + "/api/cart/get", {}, { headers: { token } });
-    setCartItems(response.data.cartData);
-  };
+    try {
+        const response = await axios.post(url + "/api/cart/get", {}, { headers: { token } });
+        if (response.data.success && response.data.cartData) {
+            console.log("Loaded Cart Data:", response.data.cartData); // Debugging output
+            setCartItems(response.data.cartData);
+        }
+    } catch (error) {
+        console.error("Error fetching cart:", error);
+    }
+};
+
+
 
   const fetchCategories = async () => {
     const response = await axios.get(url + "/api/category/list");

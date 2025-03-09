@@ -73,7 +73,7 @@
     width: 30px;
 }
 
-/* 🟢 Popup Overlay */
+/* Popup Styling */
 .popup-overlay {
     position: fixed;
     top: 0;
@@ -84,55 +84,120 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1;
+    z-index: 999;
 }
 
-/* 🟢 Popup Box */
 .popup {
     background: white;
     padding: 20px;
     border-radius: 8px;
-    width: 350px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
     text-align: center;
 }
 
-/* 🟢 Extra Ingredient Options */
+.popup h3 {
+    margin-bottom: 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+/* Extra Ingredient Section */
 .extra-options {
     display: flex;
     flex-direction: column;
-    text-align: left;
-    margin-bottom: 10px;
+    gap: 10px;
+    margin: 10px 0;
 }
 
-/* 🟢 Text Area for Comments */
+.extra-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f9f9f9;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.extra-item p {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Extra Ingredient Quantity Controls */
+.extra-quantity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.extra-quantity button {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.extra-quantity button:hover {
+    background-color: #e60000;
+}
+
+.extra-quantity span {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Special Instructions */
 textarea {
     width: 100%;
-    height: 50px;
-    margin-bottom: 10px;
-    padding: 5px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    height: 60px;
+    margin-top: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 14px;
 }
 
-/* 🟢 Popup Buttons */
+/* Popup Buttons */
 .popup-buttons {
     display: flex;
     justify-content: space-between;
+    margin-top: 15px;
 }
 
 .popup-buttons button {
-    padding: 8px 12px;
+    padding: 10px 16px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
+    font-size: 14px;
     cursor: pointer;
+    transition: background 0.2s;
 }
 
 .popup-buttons button:first-child {
     background: #ccc;
+    color: #333;
+}
+
+.popup-buttons button:first-child:hover {
+    background: #bbb;
 }
 
 .popup-buttons button:last-child {
     background: #ff4d4d;
     color: white;
+}
+
+.popup-buttons button:last-child:hover {
+    background: #e60000;
 }

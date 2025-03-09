@@ -7,42 +7,50 @@ import { StoreContext } from "../../context/StoreContext";
 
 const FoodItem = ({ id, name, price, description, image, extras = [] }) => {
   const { addToCart, url } = useContext(StoreContext);
-
+  
   const [showPopup, setShowPopup] = useState(false);
-  const [selectedExtras, setSelectedExtras] = useState([]);
+  const [selectedExtras, setSelectedExtras] = useState({});
   const [comment, setComment] = useState("");
 
-  // 🟢 Handle Extra Ingredients Selection
-  const handleExtraChange = (extra) => {
-    setSelectedExtras(
-      selectedExtras.includes(extra)
-        ? selectedExtras.filter((item) => item !== extra)
-        : [...selectedExtras, extra]
-    );
+  // 🟢 Increase Extra Quantity
+  const increaseExtra = (extraId) => {
+    setSelectedExtras((prev) => ({
+      ...prev,
+      [extraId]: (prev[extraId] || 0) + 1,
+    }));
+  };
+
+  // 🟢 Decrease Extra Quantity
+  const decreaseExtra = (extraId) => {
+    setSelectedExtras((prev) => {
+      if (!prev[extraId] || prev[extraId] === 0) return prev;
+      const newExtras = { ...prev };
+      newExtras[extraId] -= 1;
+      if (newExtras[extraId] === 0) delete newExtras[extraId]; // Remove if quantity is 0
+      return newExtras;
+    });
   };
 
   // 🟢 Handle Add to Cart
   const handleAddToCart = () => {
-    addToCart(id, selectedExtras, comment);
+    const formattedExtras = Object.entries(selectedExtras)
+      .filter(([_, quantity]) => quantity > 0)
+      .map(([extraId, quantity]) => ({
+        _id: extraId,
+        quantity: quantity,
+      }));
+
+    addToCart(id, formattedExtras, comment);
     setShowPopup(false);
-    setSelectedExtras([]);
+    setSelectedExtras({});
     setComment("");
   };
 
   return (
     <div className="food-item">
       <div className="food-item-image-container">
-        <img
-          className="food-item-image"
-          src={url + "/foodimages/" + image}
-          alt=""
-        />
-        <img
-          className="addicon"
-          onClick={() => setShowPopup(true)}
-          src={assets.add_icon_white}
-          alt="Add to Cart"
-        />
+        <img className="food-item-image" src={url + "/foodimages/" + image} alt="" />
+        <img className="addicon" onClick={() => setShowPopup(true)} src={assets.add_icon_white} alt="Add to Cart" />
       </div>
       <div className="food-item-info">
         <div className="food-item-name-rating">
@@ -63,18 +71,14 @@ const FoodItem = ({ id, name, price, description, image, extras = [] }) => {
                 <p>Select Extra Ingredients:</p>
                 <div className="extra-options">
                   {extras.map((extra, index) => (
-                    <label key={index}>
-                      <input
-                        type="checkbox"
-                        value={extra._id} // ✅ Use _id instead of full object
-                        checked={selectedExtras.some(
-                          (e) => e._id === extra._id
-                        )}
-                        onChange={() => handleExtraChange(extra)}
-                      />
-                      {extra.name} (+${extra.price}){" "}
-                      {/* ✅ Properly access name & price */}
-                    </label>
+                    <div key={index} className="extra-item">
+                      <p>{extra.name} (+${extra.price})</p>
+                      <div className="extra-quantity">
+                        <button onClick={() => decreaseExtra(extra._id)}>-</button>
+                        <span>{selectedExtras[extra._id] || 0}</span>
+                        <button onClick={() => increaseExtra(extra._id)}>+</button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </>

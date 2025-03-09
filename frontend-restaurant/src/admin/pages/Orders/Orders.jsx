@@ -128,18 +128,26 @@ const Orders = ({ url }) => {
                 <p><b>Total Items:</b> {order.items.length}</p>
                 <p><b>Total Amount:</b> ${order.amount}.00</p>
 
-                {/* 🟢 Show Order Items */}
+                {/* 🟢 Show Order Items with Extras */}
                 {order.items.map((item, idx) => (
-                  <div key={idx} className="order-item-detail">
-                    <p><b>{item.name} x {item.quantity}</b></p>
-                    {item.extras.length > 0 && (
-                      <p className="order-extras"><b>Extras:</b> {item.extras.map(extra => extra.name).join(", ")}</p>
-                    )}
-                    {item.comment && (
-                      <p className="order-comment"><b>Note:</b> {item.comment}</p>
-                    )}
-                  </div>
+                    <div key={idx} className="order-item-detail">
+                        <p><b>{item.name} x {item.quantity}</b></p>
+                        
+                        {/* Show Extras with Quantity */}
+                        {item.extras.length > 0 && (
+                            <p className="order-extras">
+                                <b>Extras:</b> {item.extras.map(extra => 
+                                    `${extra.name} x ${extra.quantity || 1}`).join(", ")}
+                            </p>
+                        )}
+
+                        {/* Show Comment if available */}
+                        {item.comment && (
+                            <p className="order-comment"><b>Note:</b> {item.comment}</p>
+                        )}
+                    </div>
                 ))}
+
               </div>
 
               <select onChange={(event) => statusHandler(event, order._id)} value={order.status}>

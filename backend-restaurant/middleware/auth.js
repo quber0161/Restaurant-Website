@@ -1,18 +1,22 @@
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
+import userModel from "../models/userModel.js";
 
-const authMiddleware = async (req,res,next) => {
-    const {token} = req.headers;
-    if (!token) {
-        return res.json({success:false,message:"Not Authorized Login Again"})
-    }
+const authMiddleware = async (req, res, next) => {
     try {
-        const token_decode = jwt.verify(token,process.env.JWT_SECRET);
-        req.body.userId = token_decode.id;
+        const token = req.headers.token;
+
+        if (!token) {
+            return res.status(401).json({ success: false, message: "Unauthorized: No token provided" });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.userId = decoded.id; // 🟢 Store user ID in `req.userId`
+
         next();
     } catch (error) {
-        console.log(error);
-        res.json({success:false,message:"Error"})
+        console.error("❌ Error in authMiddleware:", error);
+        res.status(401).json({ success: false, message: "Unauthorized: Invalid token" });
     }
-}
+};
 
 export default authMiddleware;

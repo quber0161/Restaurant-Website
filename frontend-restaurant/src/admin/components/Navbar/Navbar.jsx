@@ -7,7 +7,7 @@ import { StoreContext } from '../../../user/context/StoreContext'
 const Navbar = () => {
   const { logout} = useContext(StoreContext);
   return (
-    <div className='navbar'>
+    <div className='navbar-admin'>
         <img className='logo' src={assets.logo} alt="" />
         <h1>ADMIN</h1>
         <button onClick={logout} className="logout-btn">Logout</button>

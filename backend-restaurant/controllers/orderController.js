@@ -10,26 +10,94 @@ const placeOrder = async (req, res) => {
     const frontend_url = "http://localhost:5173";
 
     try {
-        // 🟢 Calculate total price including extras
+        const userId = req.userId; 
+        if (!userId) {
+            return res.json({ success: false, message: "User not authenticated" });
+        }
+
+        console.log("🔹 Received order request:", JSON.stringify(req.body.items, null, 2));
+
         let totalAmount = 0;
-        const orderItems = req.body.items.map(item => {
-            // Calculate extras total
-            const extrasTotal = item.extras.reduce((acc, extra) => acc + extra.price, 0);
-            const itemTotal = (item.price + extrasTotal) * item.quantity;
+        let line_items = [];
+
+        const orderItems = await Promise.all(req.body.items.map(async (item) => {
+            let extrasTotal = 0;
+            let formattedExtras = [];
+
+            if (Array.isArray(item.extras) && item.extras.length > 0) {
+                // 🟢 Fetch full details of extras from the database
+                const extraIds = item.extras.map(extra => extra._id);
+                const extraDetails = await extraModel.find({ _id: { $in: extraIds } });
+
+                formattedExtras = item.extras.map(extra => {
+                    const extraData = extraDetails.find(e => e._id.toString() === extra._id);
+
+                    if (extraData) {
+                        const extraPrice = extraData.price ? parseFloat(extraData.price) : 0;
+                        const extraQuantity = extra.quantity ? parseInt(extra.quantity) : 1;
+                        const extraTotal = extraPrice * extraQuantity;
+
+                        extrasTotal += extraTotal;
+
+                        return {
+                            _id: extra._id,
+                            name: extraData.name,  // ✅ Get correct name
+                            price: extraPrice,  // ✅ Get correct price
+                            quantity: extraQuantity
+                        };
+                    } else {
+                        return null; // Ignore invalid extras
+                    }
+                }).filter(extra => extra !== null);
+            }
+
+            // ✅ Calculate total price (item + extras)
+            const itemTotal = ((item.price || 0) + extrasTotal) * (item.quantity || 1);
             totalAmount += itemTotal;
+
+            // ✅ Push main item to order
+            line_items.push({
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: item.name || "Unknown Item" },
+                    unit_amount: Math.round((item.price || 0) * 100)
+                },
+                quantity: item.quantity || 1
+            });
+
+            // ✅ Push each extra as a separate line item in Stripe
+            formattedExtras.forEach(extra => {
+                line_items.push({
+                    price_data: {
+                        currency: "usd",
+                        product_data: { name: `${item.name} - ${extra.name}` },
+                        unit_amount: Math.round(extra.price * 100)
+                    },
+                    quantity: extra.quantity
+                });
+            });
 
             return {
                 name: item.name,
                 price: item.price,
                 quantity: item.quantity,
-                extras: item.extras,  
+                extras: formattedExtras,
                 comment: item.comment || ""
             };
-        });
+        }));
+
+        console.log("✅ Processed Order Items:", JSON.stringify(orderItems, null, 2));
+        console.log("✅ Calculated Total Amount:", totalAmount);
+        console.log("✅ Stripe Line Items:", JSON.stringify(line_items, null, 2));
+
+        if (isNaN(totalAmount) || totalAmount <= 0) {
+            console.error("❌ Order Error: Invalid totalAmount", totalAmount);
+            return res.json({ success: false, message: "Error processing order - Invalid amount" });
+        }
 
         // 🟢 Create new order in MongoDB
         const newOrder = new orderModel({
-            userId: req.body.userId,
+            userId: userId,
             items: orderItems,
             amount: totalAmount,
             address: req.body.address,
@@ -37,35 +105,7 @@ const placeOrder = async (req, res) => {
         });
 
         await newOrder.save();
-        await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
-
-        // 🟢 Prepare Stripe `line_items`
-        let line_items = [];
-        req.body.items.forEach(item => {
-            const extrasTotal = item.extras.reduce((acc, extra) => acc + extra.price, 0);
-            const totalItemPrice = item.price + extrasTotal;
-
-            line_items.push({
-                price_data: {
-                    currency: "usd",
-                    product_data: { name: item.name },
-                    unit_amount: totalItemPrice * 100,  // Convert to cents
-                },
-                quantity: item.quantity
-            });
-
-            // 🟢 Add extras as separate line items in Stripe
-            item.extras.forEach(extra => {
-                line_items.push({
-                    price_data: {
-                        currency: "usd",
-                        product_data: { name: `${item.name} - ${extra.name}` },
-                        unit_amount: extra.price * 100, // Convert to cents
-                    },
-                    quantity: item.quantity
-                });
-            });
-        });
+        await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
         // 🟢 Create Stripe checkout session
         const session = await stripe.checkout.sessions.create({
@@ -78,7 +118,7 @@ const placeOrder = async (req, res) => {
         res.json({ success: true, session_url: session.url });
 
     } catch (error) {
-        console.error("Error processing order:", error);
+        console.error("❌ Error processing order:", error);
         res.json({ success: false, message: "Error processing order" });
     }
 };
@@ -108,41 +148,35 @@ const verifyOrder = async (req,res) => {
 // 🟢 Fetch all orders for the admin panel
 const listOrders = async (req, res) => {
     try {
-        const orders = await orderModel.find({}).lean();
-
-        // Populate extras names
-        for (const order of orders) {
-            for (const item of order.items) {
-                item.extras = await extraModel.find({ _id: { $in: item.extras } }, "name");
-            }
-        }
+        const orders = await orderModel
+            .find({ payment: true })
+            .populate("items.extras"); // ✅ Populate extras with details
 
         res.json({ success: true, data: orders });
     } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: "Error" });
+        console.log("❌ Error fetching orders for admin:", error);
+        res.json({ success: false, message: "Error fetching orders" });
     }
 };
+
+
 
 
 // 🟢 Fetch user-specific orders
 const userOrders = async (req, res) => {
     try {
-        const orders = await orderModel.find({ userId: req.body.userId }).lean();
-
-        // Populate extras names
-        for (const order of orders) {
-            for (const item of order.items) {
-                item.extras = await extraModel.find({ _id: { $in: item.extras } }, "name");
-            }
-        }
+        const orders = await orderModel
+            .find({ userId: req.userId, payment: true })
+            .populate("items.extras"); // ✅ Populate extra ingredient details
 
         res.json({ success: true, data: orders });
     } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: "Error" });
+        console.log("❌ Error fetching user orders:", error);
+        res.json({ success: false, message: "Error fetching orders" });
     }
 };
+
+
 
 
 

@@ -12,22 +12,32 @@ const MyOrders = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 3; // Number of orders per page
 
+  console.log("🔹 Orders Data:", data);
+
+
   // Fetch User Orders
   const fetchOrders = async () => {
-    const response = await axios.post(
-      url + "/api/order/userorders",
-      {},
-      { headers: { token } }
-    );
-    if (response.data.success) {
-      const paidOrders = response.data.data.filter(
-        (order) => order.payment === true
+    try {
+      const response = await axios.post(
+        url + "/api/order/userorders",
+        {},
+        { headers: { token } }
       );
-      setData(paidOrders);
+      console.log("🔹 API Response:", response.data); // ✅ Debugging
+  
+      if (response.data.success) {
+        const paidOrders = response.data.data.filter(order => order.payment === true);
+        console.log("✅ Paid Orders:", paidOrders); // ✅ Check if orders exist
+        setData(paidOrders);
+      }
+    } catch (error) {
+      console.error("❌ Error Fetching Orders:", error);
     }
   };
+  
 
   useEffect(() => {
+    console.log("🔹 Token Used for API:", token); // ✅ Check if token exists
     if (token) {
       fetchOrders();
     }
@@ -59,6 +69,8 @@ const MyOrders = () => {
       (a, b) => new Date(b[0]) - new Date(a[0])
     );
   };
+  console.log("🔹 Grouped Orders:", groupOrdersByDate()); // Debugging
+
 
   // Flatten grouped orders into a single array for pagination
   const flattenGroupedOrders = () => {
@@ -122,15 +134,15 @@ const MyOrders = () => {
                       <b>{item.name}</b> x {item.quantity}
                     </p>
 
-                    {/* 🟢 Extract extras properly */}
-                    {item.extras && item.extras.length > 0 ? (
+                    {/* 🟢 Show Extra Ingredients ONLY for this item */}
+                    {item.extras && item.extras.length > 0 && (
                       <p className="order-extras">
-                        <b>Extras:</b>{" "}
-                        {item.extras.map((extra) => extra.name).join(", ")}
-                      </p>
-                    ) : (
-                      <p className="order-extras">
-                        <b>Extras:</b> None
+                        <b>Extras:</b> {item.extras.map((extra, i) => (
+                          <span className="ex" key={i}>
+                            {extra.name} x {extra.quantity || 1}
+                            {i < item.extras.length - 1 ? ", " : ""}
+                          </span>
+                        ))}
                       </p>
                     )}
 

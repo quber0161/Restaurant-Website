@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
 const Cart = () => {
-  const { cartItems, food_list, removeFromCart, getTotalCartAmount, url } = useContext(StoreContext);
+  const { cartItems, food_list, removeFromCart, getTotalCartAmount, url } =
+    useContext(StoreContext);
   const navigate = useNavigate();
 
   return (
@@ -26,7 +27,18 @@ const Cart = () => {
         {food_list.map((item, index) => {
           if (cartItems[item._id]) {
             const cartItem = cartItems[item._id];
-            const extrasCost = (cartItem.extras?.length || 0) * 2; // Assuming $2 per extra
+
+            // 🟢 Calculate total price for extras dynamically
+            const extrasCost = cartItem.extras.reduce((total, extra) => {
+              const extraDetails = food_list
+                .flatMap((f) => f.extras || [])
+                .find((e) => e._id === extra._id);
+              return (
+                total + (extraDetails ? extraDetails.price * extra.quantity : 0)
+              );
+            }, 0);
+
+            // 🟢 Compute total price dynamically
             const totalPrice = (item.price + extrasCost) * cartItem.quantity;
 
             return (
@@ -34,14 +46,30 @@ const Cart = () => {
                 <div className="cart-items-title cart-items-item">
                   <img src={url + "/foodimages/" + item.image} alt="" />
                   <div>
-                    <p>{item.name}</p>
-                    {/* 🟢 Show selected extras */}
-                    {cartItem.extras.length > 0 && (
-                      <p className="cart-extras">
-                        <b>Extras:</b> {cartItem.extras.map(extra => extra.name).join(", ")}
-                      </p>
-                    )}
-                    {/* 🟢 Show comment/special instructions */}
+                    <p className="item-name">{item.name}</p>
+                    <p className="cart-extras">
+                      <b>Extras:</b>
+                      {cartItem.extras.map((extra, idx) => {
+                        const extraDetails = food_list
+                          .flatMap((f) => f.extras || [])
+                          .find((e) => e._id === extra._id);
+                        const extraName = extraDetails
+                          ? extraDetails.name
+                          : "Unknown Extra";
+                        const extraPrice = extraDetails
+                          ? extraDetails.price * extra.quantity
+                          : 0;
+                        return (
+                          <span key={extra._id}>
+                            {extraName} x {extra.quantity} ($
+                            {extraPrice})
+                            {idx < cartItem.extras.length - 1 ? ", " : ""}
+                          </span>
+                        );
+                      })}
+                    </p>
+
+                    {/* 🟢 Show comment if available */}
                     {cartItem.comment && (
                       <p className="cart-comment">
                         <b>Note:</b> {cartItem.comment}
@@ -50,8 +78,14 @@ const Cart = () => {
                   </div>
                   <p>${item.price}</p>
                   <p>{cartItem.quantity}</p>
-                  <p>${totalPrice}</p>
-                  <button className="remove-button" onClick={() => removeFromCart(item._id)}>Remove</button>
+                  <p>${totalPrice}</p>{" "}
+                  {/* 🟢 Total price updates dynamically */}
+                  <button
+                    className="remove-button"
+                    onClick={() => removeFromCart(item._id)}
+                  >
+                    Remove
+                  </button>
                 </div>
                 <hr />
               </div>
@@ -70,7 +104,9 @@ const Cart = () => {
               <b>${getTotalCartAmount() === 0 ? 0 : getTotalCartAmount()}</b>
             </div>
           </div>
-          <Link to='/order'><button>PROCEED TO CHECKOUT</button></Link>
+          <Link to="/order">
+            <button>PROCEED TO CHECKOUT</button>
+          </Link>
         </div>
       </div>
     </div>

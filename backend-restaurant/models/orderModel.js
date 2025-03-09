@@ -7,8 +7,8 @@ const orderSchema = new mongoose.Schema({
             name: String,
             price: Number,
             quantity: Number,
-            extras: { type: [String], default: [] }, // 🟢 Store selected extra ingredients
-            comment: { type: String, default: "" }   // 🟢 Store special instructions
+            extras: [{ type: mongoose.Schema.Types.ObjectId, ref: "extra" }], // ✅ Reference to extra model
+            comment: { type: String, default: "" }
         }
     ],
     amount: { type: Number, required: true },
