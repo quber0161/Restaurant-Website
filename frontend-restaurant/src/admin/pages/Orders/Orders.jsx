@@ -10,7 +10,7 @@ import { assets } from "../../assets/assets";
 const Orders = ({ url }) => {
   const [orders, setOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 3;
+  const ordersPerPage = 10;
 
   // Fetch orders from backend
   const fetchAllOrders = async () => {

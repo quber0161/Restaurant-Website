@@ -16,110 +16,148 @@ const StoreContextProvider = (props) => {
 
   // Updated addToCart to store items as objects with quantity, extras, and comment
   const addToCart = async (itemId, extras = [], comment = "") => {
-    if (!cartItems[itemId]) {
-        setCartItems((prev) => ({
-            ...prev, 
-            [itemId]: { quantity: 1, extras, comment }
-        }));
-    } else {
-        setCartItems((prev) => ({
-            ...prev, 
-            [itemId]: {
-                quantity: prev[itemId].quantity + 1,
-                extras,
-                comment
-            }
-        }));
-    }
-    
+    // 🟢 Create a unique key using itemId, extras, and comment
+    const cartKey = `${itemId}_${btoa(JSON.stringify(extras))}_${btoa(
+      comment
+    )}`;
+
+    setCartItems((prev) => ({
+      ...prev,
+      [cartKey]: { itemId, quantity: 1, extras, comment },
+    }));
+
+    // 🟢 Save to backend if user is logged in
     if (token) {
       try {
-        await axios.post(url + "/api/cart/add", { itemId, extras, comment }, { headers: { token } });
+        await axios.post(
+          url + "/api/cart/add",
+          { cartKey, itemId, extras, comment },
+          { headers: { token } }
+        );
       } catch (error) {
         console.error("Error adding to cart:", error);
       }
     }
   };
-    
-  
 
   // Updated removeFromCart to work with the new structure
-  const removeFromCart = async (itemId) => {
+  const removeFromCart = async (cartKey) => {
     setCartItems((prev) => {
-      const current = prev[itemId];
-      if (!current) return prev;
-      if (current.quantity > 1) {
-        return {
-          ...prev,
-          [itemId]: {
-            ...current,
-            quantity: current.quantity - 1,
-          },
-        };
+      const updatedCart = { ...prev };
+      if (updatedCart[cartKey].quantity > 1) {
+        updatedCart[cartKey].quantity -= 1;
       } else {
-        const newCart = { ...prev };
-        delete newCart[itemId];
-        return newCart;
+        delete updatedCart[cartKey];
       }
+      return updatedCart;
     });
+
+    // 🟢 Update Backend
     if (token) {
-      await axios.post(
-        url + "/api/cart/remove",
-        { itemId },
-        { headers: { token } }
-      );
+      try {
+        await axios.post(
+          url + "/api/cart/remove",
+          { cartKey },
+          { headers: { token } }
+        );
+      } catch (error) {
+        console.error("Error removing item from cart:", error);
+      }
     }
   };
 
-  // Calculate total cart amount, including extras (assuming $2 per extra)
+  // Calculate total cart amount
   const [totalCartAmount, setTotalCartAmount] = useState(0);
 
-const calculateTotalAmount = () => {
-  let total = 0;
-  for (const itemId in cartItems) {
-    const cartItem = cartItems[itemId];
-    let foodItem = food_list.find((product) => product._id === itemId);
-
-    if (foodItem) {
-      // 🟢 Calculate total extras price dynamically
-      const extrasCost = cartItem.extras.reduce((sum, extra) => {
-        const extraDetails = food_list.flatMap(f => f.extras || []).find(e => e._id === extra._id);
-        return sum + (extraDetails ? extraDetails.price * extra.quantity : 0);
-      }, 0);
-
-      total += (foodItem.price + extrasCost) * cartItem.quantity;
+  const calculateTotalAmount = () => {
+    if (food_list.length === 0) {
+      console.warn("⚠️ Food list is empty, skipping total calculation");
+      return;
     }
-  }
-  setTotalCartAmount(total);
-};
-
-// 🟢 Recalculate total whenever cartItems change
-useEffect(() => {
-  calculateTotalAmount();
-}, [cartItems, food_list]);
-
-// 🟢 Function to get total cart amount
-const getTotalCartAmount = () => {
-  return totalCartAmount;
-};
-
-
+  
+    let total = 0;
+  
+    Object.values(cartItems).forEach((cartItem) => {
+      const foodItem = food_list.find((product) => product._id === cartItem.itemId);
+  
+      if (foodItem) {
+        // 🟢 Ensure extras have valid price and quantity
+        const extrasCost = (cartItem.extras || []).reduce((sum, extra) => {
+          const extraDetails = food_list.flatMap(f => f.extras || []).find(e => e._id === extra._id);
+          const extraPrice = extraDetails ? extraDetails.price : 0;
+          return sum + (extraPrice * (extra.quantity || 1));
+        }, 0);
+  
+        const itemTotal = (foodItem.price + extrasCost) * (cartItem.quantity || 1);
+        total += itemTotal;
+      }
+    });
+  
+    console.log(`🟢 Final Calculated Total Amount: $${total.toFixed(2)}`);
+    setTotalCartAmount(total);
+  };
+  
+  // 🔹 Ensure total is recalculated when cartItems *or* food_list are available
+  useEffect(() => {
+    if (Object.keys(cartItems).length > 0 && food_list.length > 0) {
+      console.log("🔄 Recalculating total amount...");
+      calculateTotalAmount();
+    }
+  }, [cartItems, food_list]);
+  
+  
+  
+  // 🟢 Function to get total cart amount
+  const getTotalCartAmount = () => {
+    return totalCartAmount;
+  };
 
 
 
   const loadCartData = async (token) => {
+    console.log("🔹 Fetching Cart Data from Backend...");
+  
     try {
-        const response = await axios.post(url + "/api/cart/get", {}, { headers: { token } });
-        if (response.data.success && response.data.cartData) {
-            console.log("Loaded Cart Data:", response.data.cartData); // Debugging output
-            setCartItems(response.data.cartData);
-        }
+      const response = await axios.post(url + "/api/cart/get", {}, { headers: { token } });
+  
+      if (response.data.success && response.data.cartData) {
+        console.log("✅ Cart Data Received:", response.data.cartData);
+  
+        let transformedCart = {};
+  
+        // 🟢 Fetch extras list to get names & prices
+        const extrasResponse = await axios.get(url + "/api/extras/list");
+        const extrasMap = {};
+        extrasResponse.data.extras.forEach((extra) => {
+          extrasMap[extra._id] = extra; // Store extras by ID
+        });
+  
+        Object.entries(response.data.cartData).forEach(([key, item]) => {
+          transformedCart[key] = {
+            itemId: item.itemId,
+            quantity: item.quantity,
+            extras: item.extras.map((extra) => ({
+              _id: extra._id,
+              name: extrasMap[extra._id]?.name || "Unknown Extra",
+              price: extrasMap[extra._id]?.price || 0,
+              quantity: extra.quantity || 1,
+            })),
+            comment: item.comment || "",
+          };
+        });
+  
+        console.log("✅ Transformed Cart Data with Extras:", transformedCart);
+        setCartItems(transformedCart);
+        calculateTotalAmount();
+      } else {
+        setCartItems({});
+      }
     } catch (error) {
-        console.error("Error fetching cart:", error);
+      console.error("❌ Error fetching cart:", error);
     }
-};
-
-
+  };
+  
+  
 
   const fetchCategories = async () => {
     const response = await axios.get(url + "/api/category/list");
@@ -141,7 +179,8 @@ const getTotalCartAmount = () => {
 
   useEffect(() => {
     async function loadData() {
-      await fetchFoodList();
+      console.log("🔹 Loading All Data...");
+      await fetchFoodList(); // 🟢 Fetch food list first
       await fetchCategories();
       if (token) {
         await loadCartData(token);
@@ -149,6 +188,7 @@ const getTotalCartAmount = () => {
     }
     loadData();
   }, [token]);
+  
 
   const contextValue = {
     food_list,
@@ -164,6 +204,7 @@ const getTotalCartAmount = () => {
     userRole,
     setUserRole,
     logout,
+    loadCartData
   };
 
   return (

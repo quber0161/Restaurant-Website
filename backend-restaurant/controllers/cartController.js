@@ -1,10 +1,10 @@
 import userModel from "../models/userModel.js";
 import extraModel from "../models/extraModel.js";
 
-// 🟢 Add item to cart with extras and their quantities
+// 🟢 Add item to cart (Modify to store as separate items)
 const addToCart = async (req, res) => {
     const { itemId, extras, comment } = req.body;
-    const userId = req.userId;
+    const userId = req.userId; // Extract userId from middleware
 
     try {
         const user = await userModel.findById(userId);
@@ -13,41 +13,35 @@ const addToCart = async (req, res) => {
             return res.json({ success: false, message: "User not found" });
         }
 
+        // 🟢 Ensure cartData is an object
         if (!user.cartData || typeof user.cartData !== "object") {
             user.cartData = {};
         }
 
-        // ✅ Fetch extras' prices from the database
-        let updatedExtras = [];
-        for (let extra of extras) {
-            const extraDetails = await extraModel.findById(extra._id); // Fetch from database
-            if (extraDetails) {
-                updatedExtras.push({
-                    _id: extraDetails._id,
-                    name: extraDetails.name,
-                    price: extraDetails.price, // ✅ Ensure price is stored
-                    quantity: extra.quantity
-                });
-            }
-        }
+        // ✅ Generate Unique Key using itemId + sorted extras + comment
+        const extrasKey = extras.length > 0 
+            ? extras.map(extra => `${extra._id}-${extra.quantity}`).sort().join("_")
+            : "no-extras";
+        
+        const uniqueKey = `${itemId}_${extrasKey}_${comment || "no-comment"}`;
 
-        if (!user.cartData[itemId]) {
-            user.cartData[itemId] = { quantity: 1, extras: updatedExtras, comment };
+        // 🟢 If item with exact same extras & comment exists, increase quantity
+        if (user.cartData[uniqueKey]) {
+            user.cartData[uniqueKey].quantity += 1;
         } else {
-            let item = user.cartData[itemId];
-            item.quantity += 1;
-            item.extras = updatedExtras; // ✅ Store extras with correct price
-            item.comment = comment;
-            user.cartData[itemId] = item;
+            // 🟢 Store as new entry
+            user.cartData[uniqueKey] = {
+                itemId: itemId,
+                quantity: 1,
+                extras: extras,
+                comment: comment || ""
+            };
         }
 
-        const updatedUser = await userModel.findByIdAndUpdate(
-            userId,
-            { cartData: user.cartData },
-            { new: true }
-        );
+        // ✅ Save the updated cart data
+        await userModel.findByIdAndUpdate(userId, { cartData: user.cartData });
 
-        res.json({ success: true, message: "Item added to cart", cartData: updatedUser.cartData });
+        res.json({ success: true, message: "Item added to cart", cartData: user.cartData });
 
     } catch (error) {
         console.error("❌ Error adding to cart:", error);
@@ -57,10 +51,9 @@ const addToCart = async (req, res) => {
 
 
 
-
-/// 🟢 Remove item from cart
+// 🟢 Remove item from cart (Updated for unique cart keys)
 const removeFromCart = async (req, res) => {
-    const { itemId } = req.body;
+    const { cartKey } = req.body; // Use the new unique key format
     const userId = req.userId;
 
     try {
@@ -70,18 +63,19 @@ const removeFromCart = async (req, res) => {
             return res.json({ success: false, message: "User not found" });
         }
 
-        if (user.cartData[itemId]) {  // Check if item exists in cart
-            if (user.cartData[itemId].quantity > 1) {
-                user.cartData[itemId].quantity -= 1; // Reduce quantity by 1
+        if (user.cartData[cartKey]) {  
+            if (user.cartData[cartKey].quantity > 1) {
+                user.cartData[cartKey].quantity -= 1; // Reduce quantity
             } else {
-                delete user.cartData[itemId]; // Remove item completely if quantity is 1
+                delete user.cartData[cartKey]; // Remove item completely
             }
         } else {
             return res.json({ success: false, message: "Item not found in cart" });
         }
 
-        user.markModified('cartData'); // Ensure Mongoose detects the change
-        await user.save(); // Save the updated cart to database
+        // ✅ Save changes
+        user.markModified('cartData');
+        await user.save();
 
         res.json({ success: true, message: "Item removed from cart", cartData: user.cartData });
 
@@ -92,8 +86,8 @@ const removeFromCart = async (req, res) => {
 };
 
 
-// 🟢 Get user cart
 
+// 🟢 Get user cart
 const getCart = async (req, res) => {
     const userId = req.userId;
 
@@ -103,28 +97,13 @@ const getCart = async (req, res) => {
             return res.json({ success: false, message: "User not found" });
         }
 
-        // ✅ Fetch extra details from the database
-        for (let itemId in user.cartData) {
-            let item = user.cartData[itemId];
-            if (item.extras && item.extras.length > 0) {
-                for (let i = 0; i < item.extras.length; i++) {
-                    const extra = await extraModel.findById(item.extras[i]._id);
-                    if (extra) {
-                        item.extras[i].price = extra.price; // ✅ Assign correct price
-                        item.extras[i].name = extra.name;
-                    }
-                }
-            }
-        }
-
-        res.json({ success: true, cartData: user.cartData });
-
+        console.log("🟢 Sending Cart Data:", user.cartData);
+        res.json({ success: true, cartData: user.cartData || {} });
     } catch (error) {
-        console.error("Error fetching cart:", error);
+        console.error("❌ Error fetching cart:", error);
         res.json({ success: false, message: "Error fetching cart" });
     }
 };
-
 
 
 export { addToCart, removeFromCart, getCart };

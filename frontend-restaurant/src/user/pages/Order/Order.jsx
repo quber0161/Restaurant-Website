@@ -31,28 +31,34 @@ const Order = () => {
     event.preventDefault();
     let orderItems = [];
 
-    food_list.forEach((item) => {
-        if (cartItems[item._id]?.quantity > 0) {
-            let extrasTotal = cartItems[item._id].extras
-              ? cartItems[item._id].extras.reduce((acc, extra) => acc + (extra.price * extra.quantity), 0)
-              : 0;
+    Object.values(cartItems).forEach((cartItem) => {
+        let foodItem = food_list.find((product) => product._id === cartItem.itemId);
+        if (foodItem) {
+            let extrasTotal = cartItem.extras.reduce(
+                (acc, extra) => acc + (extra.price * extra.quantity), 0
+            );
 
             orderItems.push({
-                name: item.name,
-                price: item.price,
-                quantity: cartItems[item._id].quantity,
-                extras: cartItems[item._id].extras || [],  // 🟢 Send selected extras
-                comment: cartItems[item._id].comment || "" // 🟢 Send special instructions
+                name: foodItem.name,
+                price: foodItem.price,
+                quantity: cartItem.quantity,
+                extras: cartItem.extras || [],  
+                comment: cartItem.comment || "" 
             });
         }
     });
+
+    if (orderItems.length === 0) {
+        alert("❌ No items in order. Please add items to your cart.");
+        return;
+    }
 
     const currentDate = new Date().toISOString();
     let orderData = {
         userId: localStorage.getItem("userId"),
         address: data,
         items: orderItems,
-        amount: getTotalCartAmount(), // ✅ Includes extras pricing
+        amount: getTotalCartAmount(), 
         date: currentDate,
     };
 

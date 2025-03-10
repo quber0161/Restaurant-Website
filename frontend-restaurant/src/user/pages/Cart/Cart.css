@@ -1,7 +1,9 @@
 .cart{
     margin-top: 130px;
 }
-
+.h2{
+    margin-top: 250px;
+}
 .cart-items-title{
     display: grid;
     grid-template-columns: 1fr 2.5fr 1fr 1fr 1fr 0.5fr;

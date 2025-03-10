@@ -10,92 +10,48 @@ const placeOrder = async (req, res) => {
     const frontend_url = "http://localhost:5173";
 
     try {
-        const userId = req.userId; 
+        const userId = req.userId;
         if (!userId) {
             return res.json({ success: false, message: "User not authenticated" });
         }
 
-        console.log("🔹 Received order request:", JSON.stringify(req.body.items, null, 2));
+        console.log("🔹 Received order request:", req.body.items);
+
+        if (!req.body.items || req.body.items.length === 0) {
+            console.error("❌ Order Error: No items in order request.");
+            return res.json({ success: false, message: "No items in order" });
+        }
 
         let totalAmount = 0;
-        let line_items = [];
+        const orderItems = req.body.items.map(item => {
+            const extrasTotal = item.extras
+                ? item.extras.reduce((acc, extra) => acc + (extra.price * extra.quantity || 0), 0)
+                : 0;
 
-        const orderItems = await Promise.all(req.body.items.map(async (item) => {
-            let extrasTotal = 0;
-            let formattedExtras = [];
-
-            if (Array.isArray(item.extras) && item.extras.length > 0) {
-                // 🟢 Fetch full details of extras from the database
-                const extraIds = item.extras.map(extra => extra._id);
-                const extraDetails = await extraModel.find({ _id: { $in: extraIds } });
-
-                formattedExtras = item.extras.map(extra => {
-                    const extraData = extraDetails.find(e => e._id.toString() === extra._id);
-
-                    if (extraData) {
-                        const extraPrice = extraData.price ? parseFloat(extraData.price) : 0;
-                        const extraQuantity = extra.quantity ? parseInt(extra.quantity) : 1;
-                        const extraTotal = extraPrice * extraQuantity;
-
-                        extrasTotal += extraTotal;
-
-                        return {
-                            _id: extra._id,
-                            name: extraData.name,  // ✅ Get correct name
-                            price: extraPrice,  // ✅ Get correct price
-                            quantity: extraQuantity
-                        };
-                    } else {
-                        return null; // Ignore invalid extras
-                    }
-                }).filter(extra => extra !== null);
-            }
-
-            // ✅ Calculate total price (item + extras)
             const itemTotal = ((item.price || 0) + extrasTotal) * (item.quantity || 1);
             totalAmount += itemTotal;
-
-            // ✅ Push main item to order
-            line_items.push({
-                price_data: {
-                    currency: "usd",
-                    product_data: { name: item.name || "Unknown Item" },
-                    unit_amount: Math.round((item.price || 0) * 100)
-                },
-                quantity: item.quantity || 1
-            });
-
-            // ✅ Push each extra as a separate line item in Stripe
-            formattedExtras.forEach(extra => {
-                line_items.push({
-                    price_data: {
-                        currency: "usd",
-                        product_data: { name: `${item.name} - ${extra.name}` },
-                        unit_amount: Math.round(extra.price * 100)
-                    },
-                    quantity: extra.quantity
-                });
-            });
 
             return {
                 name: item.name,
                 price: item.price,
                 quantity: item.quantity,
-                extras: formattedExtras,
+                extras: item.extras.map(extra => ({
+                    _id: extra._id,
+                    name: extra.name,
+                    quantity: extra.quantity
+                })),
                 comment: item.comment || ""
             };
-        }));
+        });
 
-        console.log("✅ Processed Order Items:", JSON.stringify(orderItems, null, 2));
+        console.log("✅ Processed Order Items:", orderItems);
         console.log("✅ Calculated Total Amount:", totalAmount);
-        console.log("✅ Stripe Line Items:", JSON.stringify(line_items, null, 2));
 
         if (isNaN(totalAmount) || totalAmount <= 0) {
             console.error("❌ Order Error: Invalid totalAmount", totalAmount);
-            return res.json({ success: false, message: "Error processing order - Invalid amount" });
+            return res.json({ success: false, message: "Invalid total amount" });
         }
 
-        // 🟢 Create new order in MongoDB
         const newOrder = new orderModel({
             userId: userId,
             items: orderItems,
@@ -107,7 +63,39 @@ const placeOrder = async (req, res) => {
         await newOrder.save();
         await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
-        // 🟢 Create Stripe checkout session
+        let line_items = [];
+        req.body.items.forEach(item => {
+            const extrasTotal = item.extras
+                ? item.extras.reduce((acc, extra) => acc + (extra.price * extra.quantity || 0), 0)
+                : 0;
+
+            const totalItemPrice = (item.price || 0) + extrasTotal;
+
+            line_items.push({
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: item.name || "Unknown Item" },
+                    unit_amount: Math.round(totalItemPrice * 100),
+                },
+                quantity: item.quantity || 1
+            });
+
+            item.extras.forEach(extra => {
+                if (extra.price) {
+                    line_items.push({
+                        price_data: {
+                            currency: "usd",
+                            product_data: { name: `${item.name} - ${extra.name}` },
+                            unit_amount: Math.round(extra.price * 100),
+                        },
+                        quantity: extra.quantity || 1
+                    });
+                }
+            });
+        });
+
+        console.log("✅ Stripe Line Items:", line_items);
+
         const session = await stripe.checkout.sessions.create({
             line_items,
             mode: 'payment',
@@ -122,6 +110,7 @@ const placeOrder = async (req, res) => {
         res.json({ success: false, message: "Error processing order" });
     }
 };
+
 
 
 
