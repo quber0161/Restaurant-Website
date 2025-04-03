@@ -6,7 +6,8 @@ import { toast } from "react-toastify";
 import { assets } from "../../assets/assets";
 
 const Categories = () => {
-  const url = "http://localhost:4000";
+  const url = "https://restaurant-website-li4a.onrender.com";
+
 
   const [categories, setCategories] = useState([]);
   const [newCategoryImage, setNewCategoryImage] = useState(null);
