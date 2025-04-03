@@ -24,7 +24,7 @@ const Add = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${url()}/api/category/list`);
+        const response = await axios.get(`${url}/api/category/list`);
         if (response.data.success && Array.isArray(response.data.categories)) {
           setCategories(response.data.categories);
         } else {
@@ -38,7 +38,7 @@ const Add = () => {
 
     const fetchExtras = async () => {
       try {
-        const response = await axios.get(`${url()}/api/extras/list`);
+        const response = await axios.get(`${url}/api/extras/list`);
         if (response.data.success) {
           setExtraIngredients(response.data.extras);
         }
@@ -77,7 +77,7 @@ const Add = () => {
     formData.append("extras", JSON.stringify(data.extras)); // 🟢 Convert extras to JSON string
 
     try {
-      const response = await axios.post(`${url()}/api/food/add`, formData);
+      const response = await axios.post(`${url}/api/food/add`, formData);
       if (response.data.success) {
         setData({
           name: "",
