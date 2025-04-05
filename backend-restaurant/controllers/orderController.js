@@ -115,24 +115,32 @@ const placeOrder = async (req, res) => {
 
 
 
-const verifyOrder = async (req,res) => {
-    const {orderId,success} = req.body;
+const verifyOrder = async (req, res) => {
+    const { orderId, success } = req.body;
+
     try {
-        if (success=="true") {
-            await orderModel.findByIdAndUpdate(orderId,{payment:true})
-            res.json({success:true,message:"Paid"})
-        }
-        else{
+        if (success == "true") {
+            const updatedOrder = await orderModel.findByIdAndUpdate(
+                orderId,
+                { payment: true },
+                { new: true }
+            );
+
+            // ✅ Emit new order to admin after successful payment
+            const io = req.app.get("io");
+            io.emit("newOrder", updatedOrder);
+
+            res.json({ success: true, message: "Paid" });
+        } else {
             await orderModel.findByIdAndDelete(orderId);
-            res.json({success:false,message:"Not Paid"})
+            res.json({ success: false, message: "Not Paid" });
         }
     } catch (error) {
         console.log(error);
-        res.json({success:false,message:"Error"})
-        
+        res.json({ success: false, message: "Error" });
     }
+};
 
-}
 
 // 🟢 Fetch all orders for the admin panel
 const listOrders = async (req, res) => {

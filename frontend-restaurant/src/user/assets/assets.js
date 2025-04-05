@@ -81,7 +81,8 @@ export const assets = {
     logout_icon,
     bag_icon,
     parcel_icon,
-    instagram_icon
+    instagram_icon,
+    
 }
 
 export const menu_list = [

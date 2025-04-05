@@ -3,8 +3,13 @@
 import React, { useEffect, useState } from "react";
 import "./Orders.css";
 import axios from "axios";
-import { toast } from "react-toastify";
 import { assets } from "../../assets/assets";
+import { io } from "socket.io-client";
+import { toast, ToastContainer } from "react-toastify";
+//import "react-toastify/dist/ReactToastify.css";
+import notifySound from "../../assets/notify.wav";
+
+
 
 // eslint-disable-next-line react/prop-types
 const Orders = ({ url }) => {
@@ -29,9 +34,31 @@ const Orders = ({ url }) => {
 
   useEffect(() => {
     fetchAllOrders();
-    const interval = setInterval(fetchAllOrders, 10000);
-    return () => clearInterval(interval);
+  
+    // Polling (optional)
+    const interval = setInterval(fetchAllOrders, 5000);
+  
+    // Real-time listener via socket
+    const socket = io(url); // adjust to match your backend address
+  
+    socket.on("newOrder", (newOrder) => {
+      // 🎵 Play notification sound
+      const audio = new Audio(notifySound);
+      audio.play();
+  
+      // 🔔 Toastify notification
+      toast.success(`New order received!`);
+  
+      // 📦 Add new order to top of list
+      setOrders((prev) => [newOrder, ...prev]);
+    });
+  
+    return () => {
+      clearInterval(interval);
+      socket.disconnect();
+    };
   }, []);
+  
 
   // Change order status
   const statusHandler = async (event, orderId) => {
@@ -170,6 +197,7 @@ const Orders = ({ url }) => {
           Next
         </button>
       </div>
+      <ToastContainer position="top-right" autoClose={5000} />
     </div>
   );
 };
