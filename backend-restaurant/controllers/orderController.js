@@ -15,8 +15,6 @@ const placeOrder = async (req, res) => {
             return res.json({ success: false, message: "User not authenticated" });
         }
 
-        console.log("🔹 Received order request:", req.body.items);
-
         if (!req.body.items || req.body.items.length === 0) {
             console.error("❌ Order Error: No items in order request.");
             return res.json({ success: false, message: "No items in order" });
@@ -43,9 +41,6 @@ const placeOrder = async (req, res) => {
                 comment: item.comment || ""
             };
         });
-
-        console.log("✅ Processed Order Items:", orderItems);
-        console.log("✅ Calculated Total Amount:", totalAmount);
 
         if (isNaN(totalAmount) || totalAmount <= 0) {
             console.error("❌ Order Error: Invalid totalAmount", totalAmount);
@@ -93,8 +88,6 @@ const placeOrder = async (req, res) => {
                 }
             });
         });
-
-        console.log("✅ Stripe Line Items:", line_items);
 
         const session = await stripe.checkout.sessions.create({
             line_items,

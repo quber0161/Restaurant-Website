@@ -8,6 +8,7 @@ import { io } from "socket.io-client";
 import { toast, ToastContainer } from "react-toastify";
 //import "react-toastify/dist/ReactToastify.css";
 import notifySound from "../../assets/notify.wav";
+import { findPrinters, printOrder } from "../../utils/qzPrinter";
 
 
 
@@ -41,7 +42,8 @@ const Orders = ({ url }) => {
     // Real-time listener via socket
     const socket = io(url); // adjust to match your backend address
   
-    socket.on("newOrder", (newOrder) => {
+    socket.on("newOrder", async (newOrder) => {
+
       // 🎵 Play notification sound
       const audio = new Audio(notifySound);
       audio.play();
@@ -51,6 +53,15 @@ const Orders = ({ url }) => {
   
       // 📦 Add new order to top of list
       setOrders((prev) => [newOrder, ...prev]);
+
+      // // Print order
+      // await printOrder(newOrder, "Your Printer Name");
+
+      // // You can fetch printer names using
+      // const printers = await findPrinters();
+      // console.log(printers); // choose from list
+      
+
     });
   
     return () => {
@@ -58,6 +69,9 @@ const Orders = ({ url }) => {
       socket.disconnect();
     };
   }, []);
+
+  //
+
   
 
   // Change order status

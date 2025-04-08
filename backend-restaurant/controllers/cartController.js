@@ -96,8 +96,6 @@ const getCart = async (req, res) => {
         if (!user) {
             return res.json({ success: false, message: "User not found" });
         }
-
-        console.log("🟢 Sending Cart Data:", user.cartData);
         res.json({ success: true, cartData: user.cartData || {} });
     } catch (error) {
         console.error("❌ Error fetching cart:", error);

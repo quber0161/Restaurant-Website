@@ -43,29 +43,26 @@ const StoreContextProvider = (props) => {
 
   // Updated removeFromCart to work with the new structure
   const removeFromCart = async (cartKey) => {
-    setCartItems((prev) => {
-      const updatedCart = { ...prev };
-      if (updatedCart[cartKey].quantity > 1) {
-        updatedCart[cartKey].quantity -= 1;
-      } else {
-        delete updatedCart[cartKey];
-      }
-      return updatedCart;
-    });
-
-    // 🟢 Update Backend
     if (token) {
       try {
-        await axios.post(
+        const res = await axios.post(
           url + "/api/cart/remove",
           { cartKey },
           { headers: { token } }
         );
+  
+        if (res.data.success) {
+          // 🔄 Update cartItems based on backend's accurate data
+          setCartItems(res.data.cartData);
+        }
+        console.log("🛒 Cart Items in State:", cartItems);
+
       } catch (error) {
         console.error("Error removing item from cart:", error);
       }
     }
   };
+  
 
   // Calculate total cart amount
   const [totalCartAmount, setTotalCartAmount] = useState(0);
@@ -100,7 +97,7 @@ const StoreContextProvider = (props) => {
   
   // 🔹 Ensure total is recalculated when cartItems *or* food_list are available
   useEffect(() => {
-    if (Object.keys(cartItems).length > 0 && food_list.length > 0) {
+    if (food_list.length > 0) {
       console.log("🔄 Recalculating total amount...");
       calculateTotalAmount();
     }

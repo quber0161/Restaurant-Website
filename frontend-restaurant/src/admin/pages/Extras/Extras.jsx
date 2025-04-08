@@ -105,7 +105,7 @@ const Extras = () => {
       <ul>
         {extras.length > 0 ? (
           extras.map((extra) => (
-            <li key={extra._id}>
+            <li className="ex-li" key={extra._id}>
               <p>{extra.name} - ${extra.price}</p>
               <button onClick={() => removeExtra(extra._id)}>Remove</button>
             </li>

@@ -99,6 +99,24 @@
     font-style: italic;
 }
 
+.empty-cart {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+    color: #555;
+  }
+  
+  .go-shopping-btn {
+    margin-top: 1rem;
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #f04f2b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
 
 
 /* @media (max-width:750px) {

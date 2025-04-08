@@ -107,7 +107,7 @@ const Categories = () => {
             value={newCategory.name}
           />
           <label htmlFor="image">
-            <img
+            <img className="cat-img"
               src={
                 newCategoryImage
                   ? URL.createObjectURL(newCategoryImage)
