@@ -19,6 +19,7 @@ const Cart = () => {
   // 🔹 Ensure cart data loads on navigation to cart page
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Only load saved cart data if logged in
     if (token) {
       loadCartData(token);
     }
@@ -31,8 +32,8 @@ const Cart = () => {
       {!hasItems ? (
         <div className="empty-cart">
           <h2>Your cart is empty</h2>
-          <p>Looks like you haven't added anything yet.</p>
-          <Link to="/">
+          <p>Looks like you have not added anything yet.</p>
+          <Link to="/menu">
             <button className="go-shopping-btn">Add food items</button>
           </Link>
         </div>

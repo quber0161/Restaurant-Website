@@ -12,6 +12,7 @@ import MyOrders from "./pages/MyOrders/MyOrders";
 import MenuPage from "./pages/MenuPAge/MenuPage";
 import AboutUs from "./pages/AboutUs/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy/PrivacyPolicy";
+import GuestTrack from "./pages/GuestTrack/GuestTrack";
 
 function UserApp() {
   const [showLogin, setShowLogin] = useState(false);
@@ -30,6 +31,7 @@ function UserApp() {
           <Route path="/myorders" element={<MyOrders />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/track-order/:token" element={<GuestTrack/>} />
         </Routes>
       </div>
       <Footer />

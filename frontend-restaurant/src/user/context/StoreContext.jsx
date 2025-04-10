@@ -17,33 +17,41 @@ const StoreContextProvider = (props) => {
 
   // Updated addToCart to store items as objects with quantity, extras, and comment
   const addToCart = async (itemId, extras = [], comment = "") => {
-    // 🟢 Create a unique key using itemId, extras, and comment
-    const cartKey = `${itemId}_${btoa(JSON.stringify(extras))}_${btoa(
-      comment
-    )}`;
-
-    setCartItems((prev) => ({
+    const cartKey = `${itemId}_${btoa(JSON.stringify(extras))}_${btoa(comment)}`;
+  
+    // 🟢 Fallback to add default price and name if missing
+    const enrichedExtras = extras.map(extra => {
+      if (extra.price && extra.name) return extra;
+  
+      const extraDetails = food_list.flatMap(f => f.extras || []).find(e => e._id === extra._id);
+      return {
+        _id: extra._id,
+        name: extraDetails?.name || "Unknown Extra",
+        price: extraDetails?.price || 0,
+        quantity: extra.quantity || 1
+      };
+    });
+  
+    setCartItems(prev => ({
       ...prev,
-      [cartKey]: { itemId, quantity: 1, extras, comment },
+      [cartKey]: { itemId, quantity: 1, extras: enrichedExtras, comment }
     }));
-
-    // 🟢 Save to backend if user is logged in
+  
+    // Save to backend if logged in
     if (token) {
       try {
-        await axios.post(
-          url + "/api/cart/add",
-          { cartKey, itemId, extras, comment },
-          { headers: { token } }
-        );
+        await axios.post(url + "/api/cart/add", { cartKey, itemId, extras: enrichedExtras, comment }, { headers: { token } });
       } catch (error) {
         console.error("Error adding to cart:", error);
       }
     }
   };
+  
 
   // Updated removeFromCart to work with the new structure
   const removeFromCart = async (cartKey) => {
     if (token) {
+      // 🔐 Logged-in users - sync with backend
       try {
         const res = await axios.post(
           url + "/api/cart/remove",
@@ -52,14 +60,20 @@ const StoreContextProvider = (props) => {
         );
   
         if (res.data.success) {
-          // 🔄 Update cartItems based on backend's accurate data
           setCartItems(res.data.cartData);
         }
-        console.log("🛒 Cart Items in State:", cartItems);
-
       } catch (error) {
         console.error("Error removing item from cart:", error);
       }
+    } else {
+      // 👤 Guest user - remove from local state
+      setCartItems((prev) => {
+        const updated = { ...prev };
+        delete updated[cartKey];
+        // 🧠 Optional: Save guest cart to localStorage
+        localStorage.setItem("guestCart", JSON.stringify(updated));
+        return updated;
+      });
     }
   };
   
@@ -91,14 +105,12 @@ const StoreContextProvider = (props) => {
       }
     });
   
-    console.log(`🟢 Final Calculated Total Amount: $${total.toFixed(2)}`);
     setTotalCartAmount(total);
   };
   
   // 🔹 Ensure total is recalculated when cartItems *or* food_list are available
   useEffect(() => {
     if (food_list.length > 0) {
-      console.log("🔄 Recalculating total amount...");
       calculateTotalAmount();
     }
   }, [cartItems, food_list]);
@@ -177,7 +189,6 @@ const StoreContextProvider = (props) => {
 
   useEffect(() => {
     async function loadData() {
-      console.log("🔹 Loading All Data...");
       await fetchFoodList(); // 🟢 Fetch food list first
       await fetchCategories();
       if (token) {
