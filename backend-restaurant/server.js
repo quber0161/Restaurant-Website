@@ -65,4 +65,3 @@ server.listen(port, () => {
     console.log(`🚀 Server running at https://restaurant-website-akzvfrmk7-yaqubs-projects-095d7162.vercel.app:${port}`)
 })
 
-// mongodb+srv://dilushan06:<db_password>@cluster0.xbo2f.mongodb.net/?

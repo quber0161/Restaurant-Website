@@ -10,7 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 //placing user order from front end
 const placeOrder = async (req, res) => {
-    const frontend_url = "https://restaurant-website-akzvfrmk7-yaqubs-projects-095d7162.vercel.app";
+    const frontend_url = "https://restaurant-website-psi-gilt.vercel.app/";
 
     try {
         const userId = req.userId;
@@ -190,7 +190,7 @@ export const createGuestStripeCheckout = async (req, res) => {
       });
     });
 
-    const frontend_url = "http://localhost:5173"; // update to production if needed
+    const frontend_url = "https://restaurant-website-akzvfrmk7-yaqubs-projects-095d7162.vercel.app"; // update to production if needed
 
     const session = await stripe.checkout.sessions.create({
       line_items,
