@@ -25,7 +25,7 @@ const server = http.createServer(app)
 // ✅ Setup Socket.IO server
 const io = new Server(server, {
     cors: {
-        origin: "https://restaurant-website-akzvfrmk7-yaqubs-projects-095d7162.vercel.app", // or your frontend URL
+        origin: "https://restaurant-website-psi-gilt.vercel.app", // or your frontend URL
         methods: ["GET", "POST"]
     }
 })
