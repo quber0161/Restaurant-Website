@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import React, { useContext, useEffect } from "react";
 import "./Cart.css";
@@ -17,15 +18,27 @@ const Cart = () => {
 
   // 🔹 Ensure cart data loads on navigation to cart page
   useEffect(() => {
+    window.scrollTo(0, 0);
+    // Only load saved cart data if logged in
     if (token) {
       loadCartData(token);
     }
   }, [token]);
 
-  console.log("🛒 Cart Items in State:", cartItems);
+  const hasItems = Object.keys(cartItems).length > 0;
 
   return (
     <div className="cart">
+      {!hasItems ? (
+        <div className="empty-cart">
+          <h2>Your cart is empty</h2>
+          <p>Looks like you have not added anything yet.</p>
+          <Link to="/menu">
+            <button className="go-shopping-btn">Add food items</button>
+          </Link>
+        </div>
+      ) : (
+        <>
       <div className="cart-items">
         <div className="cart-items-title">
           <p>Items</p>
@@ -49,6 +62,7 @@ const Cart = () => {
             0
           );
           const totalPrice = (foodItem.price + extrasCost) * cartItem.quantity;
+          
 
           return (
             <div key={key}>
@@ -113,6 +127,8 @@ const Cart = () => {
           </Link>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };

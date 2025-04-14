@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useEffect, useState } from "react";
@@ -16,55 +17,66 @@ const StoreContextProvider = (props) => {
 
   // Updated addToCart to store items as objects with quantity, extras, and comment
   const addToCart = async (itemId, extras = [], comment = "") => {
-    // 🟢 Create a unique key using itemId, extras, and comment
-    const cartKey = `${itemId}_${btoa(JSON.stringify(extras))}_${btoa(
-      comment
-    )}`;
-
-    setCartItems((prev) => ({
+    const cartKey = `${itemId}_${btoa(JSON.stringify(extras))}_${btoa(comment)}`;
+  
+    // 🟢 Fallback to add default price and name if missing
+    const enrichedExtras = extras.map(extra => {
+      if (extra.price && extra.name) return extra;
+  
+      const extraDetails = food_list.flatMap(f => f.extras || []).find(e => e._id === extra._id);
+      return {
+        _id: extra._id,
+        name: extraDetails?.name || "Unknown Extra",
+        price: extraDetails?.price || 0,
+        quantity: extra.quantity || 1
+      };
+    });
+  
+    setCartItems(prev => ({
       ...prev,
-      [cartKey]: { itemId, quantity: 1, extras, comment },
+      [cartKey]: { itemId, quantity: 1, extras: enrichedExtras, comment }
     }));
-
-    // 🟢 Save to backend if user is logged in
+  
+    // Save to backend if logged in
     if (token) {
       try {
-        await axios.post(
-          url + "/api/cart/add",
-          { cartKey, itemId, extras, comment },
-          { headers: { token } }
-        );
+        await axios.post(url + "/api/cart/add", { cartKey, itemId, extras: enrichedExtras, comment }, { headers: { token } });
       } catch (error) {
         console.error("Error adding to cart:", error);
       }
     }
   };
+  
 
   // Updated removeFromCart to work with the new structure
   const removeFromCart = async (cartKey) => {
-    setCartItems((prev) => {
-      const updatedCart = { ...prev };
-      if (updatedCart[cartKey].quantity > 1) {
-        updatedCart[cartKey].quantity -= 1;
-      } else {
-        delete updatedCart[cartKey];
-      }
-      return updatedCart;
-    });
-
-    // 🟢 Update Backend
     if (token) {
+      // 🔐 Logged-in users - sync with backend
       try {
-        await axios.post(
+        const res = await axios.post(
           url + "/api/cart/remove",
           { cartKey },
           { headers: { token } }
         );
+  
+        if (res.data.success) {
+          setCartItems(res.data.cartData);
+        }
       } catch (error) {
         console.error("Error removing item from cart:", error);
       }
+    } else {
+      // 👤 Guest user - remove from local state
+      setCartItems((prev) => {
+        const updated = { ...prev };
+        delete updated[cartKey];
+        // 🧠 Optional: Save guest cart to localStorage
+        localStorage.setItem("guestCart", JSON.stringify(updated));
+        return updated;
+      });
     }
   };
+  
 
   // Calculate total cart amount
   const [totalCartAmount, setTotalCartAmount] = useState(0);
@@ -93,14 +105,12 @@ const StoreContextProvider = (props) => {
       }
     });
   
-    console.log(`🟢 Final Calculated Total Amount: $${total.toFixed(2)}`);
     setTotalCartAmount(total);
   };
   
   // 🔹 Ensure total is recalculated when cartItems *or* food_list are available
   useEffect(() => {
-    if (Object.keys(cartItems).length > 0 && food_list.length > 0) {
-      console.log("🔄 Recalculating total amount...");
+    if (food_list.length > 0) {
       calculateTotalAmount();
     }
   }, [cartItems, food_list]);
@@ -179,7 +189,6 @@ const StoreContextProvider = (props) => {
 
   useEffect(() => {
     async function loadData() {
-      console.log("🔹 Loading All Data...");
       await fetchFoodList(); // 🟢 Fetch food list first
       await fetchCategories();
       if (token) {

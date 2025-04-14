@@ -43,22 +43,22 @@ const Footer = () => {
             <li>
               <Link to="/">Home</Link>
             </li>
-            <li>About us</li>
-            <li>Privacy policy</li>
+            <li><Link to="/about">About Us</Link></li>
+            <li><Link to="/privacy">Privacy policy</Link></li>
           </ul>
         </div>
 
         <div className="footer-content-right">
           <h2>GET IN TOUCH</h2>
           <ul>
-            <li>+47 473 64 041</li>
-            <li>sandvika.kjottsenter@gmail.com</li>
+            <li><a href="tel:+4747364041">+47 473 64 041</a></li>
+            <li><a href="mailto:sandvika.kjottsenter@gmail.com">sandvika.kjottsenter@gmail.com</a></li>
           </ul>
         </div>
       </div>
       <hr />
       <p className="footer-copyright">
-        Copyright 2025 © yummy.com - All Right Reserved
+        Copyright 2025 © All Right Reserved
       </p>
     </div>
   );

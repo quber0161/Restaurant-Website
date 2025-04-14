@@ -30,66 +30,81 @@ const Order = () => {
   const order = async (event) => {
     event.preventDefault();
     let orderItems = [];
-
+  
     Object.values(cartItems).forEach((cartItem) => {
-        let foodItem = food_list.find((product) => product._id === cartItem.itemId);
-        if (foodItem) {
-            let extrasTotal = cartItem.extras.reduce(
-                (acc, extra) => acc + (extra.price * extra.quantity), 0
-            );
-
-            orderItems.push({
-                name: foodItem.name,
-                price: foodItem.price,
-                quantity: cartItem.quantity,
-                extras: cartItem.extras || [],  
-                comment: cartItem.comment || "" 
-            });
-        }
+      let foodItem = food_list.find((product) => product._id === cartItem.itemId);
+      if (foodItem) {
+        let extrasTotal = cartItem.extras.reduce(
+          (acc, extra) => acc + (extra.price * extra.quantity), 0
+        );
+  
+        orderItems.push({
+          name: foodItem.name,
+          price: foodItem.price,
+          quantity: cartItem.quantity,
+          extras: cartItem.extras || [],
+          comment: cartItem.comment || ""
+        });
+      }
     });
-
+  
     if (orderItems.length === 0) {
-        alert("❌ No items in order. Please add items to your cart.");
-        return;
+      alert("❌ No items in order. Please add items to your cart.");
+      return;
     }
-
+  
     const currentDate = new Date().toISOString();
     let orderData = {
-        userId: localStorage.getItem("userId"),
-        address: data,
-        items: orderItems,
-        amount: getTotalCartAmount(), 
-        date: currentDate,
+      address: data,
+      items: orderItems,
+      amount: getTotalCartAmount(),
+      date: currentDate,
     };
-
+  
     try {
-        let response = await axios.post(url + "/api/order/place", orderData, { headers: { token } });
-        console.log("Order Response:", response.data);
+      let response;
+      if (token) {
+        // Logged in user
+        orderData.userId = localStorage.getItem("userId");
+        response = await axios.post(url + "/api/order/place", orderData, {
+          headers: { token },
+        });
+      } else {
+        // Guest user
+        orderData.email = data.email;
+        console.log("🔍 Sending guest order data:", orderData);
 
-        if (response.data.success) {
-            const { session_url } = response.data;
-            window.location.replace(session_url);
+        response = await axios.post(url + "/api/order/guest/checkout", orderData);
+      }
+  
+      if (response.data.success) {
+        if (response.data.session_url) {
+          // Go to Stripe payment
+          window.location.replace(response.data.session_url);
         } else {
-            alert("Order Error: " + response.data.message);
+          // For guests - show message page
+          //alert("✅ Order placed. Please check your email for the tracking link.");
+          navigate("/");
         }
+      } else {
+        alert("❌ " + response.data.message);
+      }
     } catch (error) {
-        console.error("Order API Error:", error);
-        alert("Failed to place order. Please check the console for details.");
+      console.error("Order API Error:", error);
+      alert("Failed to place order. Please check the console for details.");
     }
-};
+  };
+  
 
 
 
   const navigate = useNavigate();
 
   useEffect(()=>{
-    if (!token) {
+    if(getTotalCartAmount()===0){
       navigate('/cart')
     }
-    else if(getTotalCartAmount()===0){
-      navigate('/cart')
-    }
-  },[token])
+  },[])
 
 
 
