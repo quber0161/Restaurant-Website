@@ -181,4 +181,12 @@ const updateStatus = async (req,res) => {
     }
 }
 
-export { placeOrder, verifyOrder, userOrders, listOrders,updateStatus }
+export { 
+  placeOrder, 
+  verifyOrder, 
+  userOrders, 
+  listOrders, 
+  updateStatus, 
+  createGuestStripeCheckout, 
+  trackGuestOrder 
+};
