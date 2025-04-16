@@ -75,7 +75,12 @@ return (
       {currState === "Login" ? null : (
         <div className="login-condition">
         <input type="checkbox" required />
-        <p>By clicking, I agree to the terms & Privacy policy.</p>
+        <p>
+          By clicking, I agree to the{' '}
+          <a href="/privacy" className="terms">
+            terms & Privacy policy
+          </a>.
+        </p>
       </div>)}
       {currState === "Login" ? (
         <p>
