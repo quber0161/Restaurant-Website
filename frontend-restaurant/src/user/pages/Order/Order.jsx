@@ -72,12 +72,13 @@ const Order = () => {
       } else {
         // Guest user
         orderData.email = data.email;
-        console.log("🔍 Sending guest order data:", orderData);
 
         response = await axios.post(url + "/api/order/guest/checkout", orderData);
       }
   
       if (response.data.success) {
+
+        localStorage.removeItem("guestCart");/////////////////////////////
         if (response.data.session_url) {
           // Go to Stripe payment
           window.location.replace(response.data.session_url);
@@ -101,9 +102,29 @@ const Order = () => {
   const navigate = useNavigate();
 
   useEffect(()=>{
-    if(getTotalCartAmount()===0){
-      navigate('/cart')
-    }
+    // if(getTotalCartAmount()===0){
+    //   navigate('/cart')
+    // }
+
+    // If user is logged in, fetch last address
+    const fetchLastAddress = async () => {
+      const userId = localStorage.getItem("userId");
+      console.log("userid:",userId)
+      if (token && userId) {
+        try {
+          const res = await axios.get(`${url}/api/order/last/${userId}`, {
+            headers: { token }
+          });
+          if (res.data.success && res.data.address) {
+            setData(res.data.address);
+          }
+        } catch (error) {
+          console.error("Could not fetch previous address:", error);
+        }
+      }
+    };
+
+    fetchLastAddress();
   },[])
 
 
@@ -111,7 +132,7 @@ const Order = () => {
   return (
     <form onSubmit={order} className='order'>
       <div className="order-left">
-        <p className='title'>Delivery Information</p>
+        <p className='title'>PickUp Information</p>
         <div className="multi-fields">
           <input required name='firstName' onChange={onChangeHandler} value={data.firstName} type="text" placeholder='First name'/>
           <input required name='lastName' onChange={onChangeHandler} value={data.lastName} type="text" placeholder='Last name'/>
@@ -132,7 +153,7 @@ const Order = () => {
           <div>
             <div className="cart-total-details">
               <b>Total</b>
-              <b>${getTotalCartAmount()===0?0:getTotalCartAmount()}</b>
+              <b>Kr {getTotalCartAmount()===0?0:getTotalCartAmount()}</b>
             </div>
           </div>
           <button type='submit'>PROCEED TO PAYMENT</button>

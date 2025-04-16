@@ -58,7 +58,7 @@ const FoodItem = ({ id, name, price, description, image, extras = [] }) => {
           <img src={assets.rating_starts} alt="" />
         </div>
         <p className="food-item-description">{description}</p>
-        <p className="food-item-price">${price}</p>
+        <p className="food-item-price">Kr {price}</p>
       </div>
 
       {/* 🟢 Popup for Customization */}
@@ -72,7 +72,7 @@ const FoodItem = ({ id, name, price, description, image, extras = [] }) => {
                 <div className="extra-options">
                   {extras.map((extra, index) => (
                     <div key={index} className="extra-item">
-                      <p>{extra.name} (+${extra.price})</p>
+                      <p>{extra.name} (+Kr {extra.price})</p>
                       <div className="extra-quantity">
                         <button onClick={() => decreaseExtra(extra._id)}>-</button>
                         <span>{selectedExtras[extra._id] || 0}</span>
