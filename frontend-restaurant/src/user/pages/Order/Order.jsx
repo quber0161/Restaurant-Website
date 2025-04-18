@@ -132,7 +132,7 @@ const Order = () => {
   return (
     <form onSubmit={order} className='order'>
       <div className="order-left">
-        <p className='title'>PickUp Information</p>
+        <p className='title'>Pick up Information</p>
         <div className="multi-fields">
           <input required name='firstName' onChange={onChangeHandler} value={data.firstName} type="text" placeholder='First name'/>
           <input required name='lastName' onChange={onChangeHandler} value={data.lastName} type="text" placeholder='Last name'/>
