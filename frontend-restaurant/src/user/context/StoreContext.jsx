@@ -8,7 +8,6 @@ import { Navigate } from "react-router-dom";
 export const StoreContext = createContext(null);
 
 const StoreContextProvider = (props) => {
-  const [cartItems, setCartItems] = useState({});
   const url = "https://restaurant-website-li4a.onrender.com";
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [cartItems, setCartItems] = useState(() => {
