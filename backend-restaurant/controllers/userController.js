@@ -24,7 +24,7 @@ const loginUser = async (req, res) => {
         }
 
         const token = createToken(user._id, user.role); // 🔹 Include role in token
-        res.json({ success: true, token, role: user.role }); // 🔹 Return role
+        res.json({ success: true, token, role: user.role, userId: user._id}); // 🔹 Return role
     } catch (error) {
         console.log(error);
         res.json({ success: false, message: "Error" });
@@ -66,7 +66,7 @@ const registerUser = async (req, res) => {
 
         const user = await newUser.save();
         const token = createToken(user._id, user.role); // 🔹 Include role in token
-        res.json({ success: true, token, role: user.role }); // 🔹 Return role
+        res.json({ success: true, token, role: user.role, userId: user._id}); // 🔹 Return role
     } catch (error) {
         console.log(error);
         res.json({ success: false, message: "Error" });

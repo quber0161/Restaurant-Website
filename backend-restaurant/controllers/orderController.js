@@ -71,7 +71,7 @@ const placeOrder = async (req, res) => {
 
             line_items.push({
                 price_data: {
-                    currency: "usd",
+                    currency: "nok",
                     product_data: { name: item.name || "Unknown Item" },
                     unit_amount: Math.round(item.price * 100),
                 },
@@ -82,7 +82,7 @@ const placeOrder = async (req, res) => {
                 if (extra.price) {
                     line_items.push({
                         price_data: {
-                            currency: "usd",
+                            currency: "nok",
                             product_data: { name: `${item.name} - ${extra.name}` },
                             unit_amount: Math.round(extra.price * 100),
                         },
@@ -169,7 +169,7 @@ export const createGuestStripeCheckout = async (req, res) => {
 
       line_items.push({
         price_data: {
-          currency: "usd",
+          currency: "nok",
           product_data: { name: item.name },
           unit_amount: Math.round(item.price * 100),
         },
@@ -180,7 +180,7 @@ export const createGuestStripeCheckout = async (req, res) => {
         if (extra.price ){
             line_items.push({
             price_data: {
-                currency: "usd",
+                currency: "nok",
                 product_data: { name: `${item.name} - ${extra.name}` },
                 unit_amount: Math.round((extra.price || 0) * 100)
             },
@@ -310,7 +310,18 @@ const userOrders = async (req, res) => {
     }
 };
 
-
+const getLastOrder = async (req, res) => {
+  try {
+    const lastOrder = await orderModel.findOne({ userId: req.params.userId }).sort({ date: -1 });
+    if (lastOrder) {
+      res.status(200).json({ success: true, address: lastOrder.address });
+    } else {
+      res.status(404).json({ success: false, message: "No previous order found" });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server Error", error: err.message });
+  }
+};
 
 
 
@@ -326,4 +337,4 @@ const updateStatus = async (req,res) => {
     }
 }
 
-export { placeOrder, verifyOrder, userOrders, listOrders,updateStatus, }
+export { placeOrder, verifyOrder, userOrders, listOrders,updateStatus, getLastOrder }

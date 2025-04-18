@@ -84,8 +84,7 @@ const Cart = () => {
 
                       return (
                         <span key={extra._id}>
-                          {extraName} x {extra.quantity} ($
-                          {(extraPrice * extra.quantity)})
+                          {extraName} x {extra.quantity} (Kr {(extraPrice * extra.quantity)})
                           {index < cartItem.extras.length - 1 ? ", " : ""}
                         </span>
                       );
@@ -97,9 +96,9 @@ const Cart = () => {
                     </p>
                   )}
                 </div>
-                <p>${foodItem.price}</p>
+                <p>Kr {foodItem.price}</p>
                 <p>{cartItem.quantity}</p>
-                <p>${totalPrice}</p>
+                <p>Kr {totalPrice}</p>
                 <button
                   className="remove-button"
                   onClick={() => removeFromCart(key)}
@@ -119,7 +118,7 @@ const Cart = () => {
           <div>
             <div className="cart-total-details">
               <b>Total</b>
-              <b>${getTotalCartAmount()}</b>
+              <b>Kr {getTotalCartAmount()}</b>
             </div>
           </div>
           <Link to="/order">

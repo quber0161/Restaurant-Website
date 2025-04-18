@@ -157,7 +157,7 @@ const MyOrders = () => {
               </div>
 
               <p>
-                <b>Total:</b> ${order.amount}.00
+                <b>Total:</b> Kr {order.amount}.00
               </p>
               <p>
                 <b>Items:</b> {order.items.length}

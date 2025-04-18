@@ -34,13 +34,15 @@ const onSubmitHandler = async (event) => {
   const response = await axios.post(url + endpoint, data);
 
   if (response.data.success) {
-    const { token, role } = response.data;
+    const { token, role, userId } = response.data;
     setToken(token);
     setUserRole(role);
 
     // Store token and role
     localStorage.setItem("token", token);
     localStorage.setItem("role", role);
+    localStorage.setItem("userId", userId); // Or whatever key your backend returns
+
 
     setShowLogin(false);
 
@@ -73,7 +75,12 @@ return (
       {currState === "Login" ? null : (
         <div className="login-condition">
         <input type="checkbox" required />
-        <p>By clicking, I agree to the terms of use & Privacy policy.</p>
+        <p>
+          By clicking, I agree to the{' '}
+          <a href="/privacy" className="terms">
+            terms & Privacy policy
+          </a>.
+        </p>
       </div>)}
       {currState === "Login" ? (
         <p>

@@ -58,14 +58,14 @@ const GuestTrack = () => {
       <h2>Track Your Order</h2>
 
       <button className="track-btn" onClick={() => window.location.reload()}>
-        🔄 Track Status
+        Track Status
       </button>
 
       <p>
         <strong>Order Status:</strong> {order.status}
       </p>
       <p>
-        <strong>Total:</strong> ${order.amount}
+        <strong>Total:</strong> Kr {order.amount}
       </p>
       <p>
         <strong>Order Date:</strong> {new Date(order.date).toLocaleString()}
@@ -74,7 +74,7 @@ const GuestTrack = () => {
       <ul>
         {order.items.map((item, i) => (
           <li key={i}>
-            {item.quantity}x {item.name} - ${item.price}
+            {item.quantity}x {item.name} - Kr {item.price}
             {item.extras?.length > 0 && (
               <ul>
               {item.extras.map((extra, idx) => {
@@ -83,7 +83,7 @@ const GuestTrack = () => {
           
                 return (
                   <li key={idx}>
-                    {name} x {extra.quantity || 1} (+${price * (extra.quantity || 1)})
+                    {name} x {extra.quantity || 1} (+Kr {price * (extra.quantity || 1)})
                   </li>
                 );
               })}

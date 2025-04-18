@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.js";
-import { createGuestStripeCheckout, listOrders, placeOrder, trackGuestOrder, updateStatus, userOrders, verifyOrder } from "../controllers/orderController.js";
+import { createGuestStripeCheckout, getLastOrder, listOrders, placeOrder, trackGuestOrder, updateStatus, userOrders, verifyOrder } from "../controllers/orderController.js";
 import sendEmail from '../utils/sendEmail.js';
 
 const orderRouter = express.Router();
@@ -12,6 +12,7 @@ orderRouter.get('/list',listOrders);
 orderRouter.post('/status',updateStatus);
 orderRouter.post("/guest/checkout", createGuestStripeCheckout)
 orderRouter.get("/track/:token", trackGuestOrder)
+orderRouter.get("/last/:userId", getLastOrder)
 
 orderRouter.get('/test-email', async (req, res) => {
   try {
