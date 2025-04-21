@@ -71,3 +71,26 @@
         text-align: center;
     }
 }
+
+
+@media (max-width: 480px) {
+    .footer-content-left p {
+      font-size: 14px;
+    }
+  
+    .footer-content-center h2,
+    .footer-content-right h2 {
+      font-size: 18px;
+    }
+  
+    .footer-content-center ul,
+    .footer-content-right ul {
+      font-size: 14px;
+    }
+  
+    .footer-social-icons img {
+      width: 30px;
+      margin-right: 10px;
+    }
+  }
+  
